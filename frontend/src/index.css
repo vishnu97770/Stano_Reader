@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Prevent overscroll bounce on iOS when writing on canvas */
+html,
+body {
+  overscroll-behavior: none;
+}
