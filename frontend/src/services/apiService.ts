@@ -1,4 +1,4 @@
-import type { StrokeFeatures } from '../types/analysis';
+import type { FamilyResult, StrokeFeatures } from '../types/analysis';
 import type { SessionDetail, SessionSummary, StrokeCreatePayload } from '../types/session';
 import type { StrokePoint } from '../types/stroke';
 
@@ -21,6 +21,14 @@ export const api = {
   analysis: {
     analyzeStroke: (strokeId: string, points: StrokePoint[]): Promise<StrokeFeatures> =>
       request('/api/analyze-stroke', {
+        method: 'POST',
+        body: JSON.stringify({ stroke_id: strokeId, points }),
+      }),
+  },
+
+  classify: {
+    classifyFamily: (strokeId: string, points: StrokePoint[]): Promise<FamilyResult> =>
+      request('/api/classify-family', {
         method: 'POST',
         body: JSON.stringify({ stroke_id: strokeId, points }),
       }),

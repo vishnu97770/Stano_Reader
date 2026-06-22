@@ -1,6 +1,10 @@
 from pydantic import BaseModel
 
 
+# ---------------------------------------------------------------------------
+# M4 — Feature extraction schemas
+# ---------------------------------------------------------------------------
+
 class BoundingBox(BaseModel):
     min_x: float
     max_x: float
@@ -21,3 +25,19 @@ class StrokeFeatures(BaseModel):
     avg_point_distance: float   # alias of avg_segment_length, exposed for clarity
     is_curve: bool
     curvature_ratio: float      # path_length / chord_length
+
+
+# ---------------------------------------------------------------------------
+# M5 — Family classification schemas
+# ---------------------------------------------------------------------------
+
+class FamilyMatch(BaseModel):
+    family: str       # e.g. "TD_FAMILY"
+    confidence: float # [0, 1] — how well the stroke matches this family
+
+
+class FamilyResult(BaseModel):
+    stroke_id: str
+    family: str                         # best-matching family, or "UNKNOWN"
+    confidence: float                   # score of the best match
+    alternatives: list[FamilyMatch]     # other families above noise floor, sorted desc

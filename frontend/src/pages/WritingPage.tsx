@@ -5,10 +5,12 @@ import Workspace from '../components/Workspace/Workspace';
 import DrawingCanvas from '../components/Canvas/DrawingCanvas';
 import type { DrawingCanvasHandle } from '../components/Canvas/DrawingCanvas';
 import AnalysisPanel from '../components/AnalysisPanel/AnalysisPanel';
+import FamilyPanel from '../components/FamilyPanel/FamilyPanel';
 import Toolbar from '../components/Toolbar/Toolbar';
 import { useSocket } from '../hooks/useSocket';
 import { useSession } from '../hooks/useSession';
 import { useStrokeAnalysis } from '../hooks/useStrokeAnalysis';
+import { useStrokeFamily } from '../hooks/useStrokeFamily';
 import type { Stroke } from '../types/stroke';
 import type { StrokeCreatePayload } from '../types/session';
 
@@ -20,6 +22,7 @@ export default function WritingPage() {
   const canvasRef = useRef<DrawingCanvasHandle>(null);
   const { status, emitStroke, remoteStrokes } = useSocket(sessionId);
   const { features, isAnalyzing, error: analysisError, analyzeStroke } = useStrokeAnalysis();
+  const { result: familyResult, isClassifying, error: familyError, classifyFamily } = useStrokeFamily();
   const {
     sessions,
     activeSession,
@@ -63,8 +66,9 @@ export default function WritingPage() {
       });
       emitStroke(stroke, penColorRef.current, penWidthRef.current);
       void analyzeStroke(stroke.id, stroke.points);
+      void classifyFamily(stroke.id, stroke.points);
     },
-    [emitStroke, analyzeStroke],
+    [emitStroke, analyzeStroke, classifyFamily],
   );
 
   // ── Session actions ───────────────────────────────────────────────────────
@@ -125,11 +129,18 @@ export default function WritingPage() {
           />
         }
         outputPanel={
-          <AnalysisPanel
-            features={features}
-            isAnalyzing={isAnalyzing}
-            error={analysisError}
-          />
+          <div className="flex flex-col gap-3 h-full overflow-y-auto">
+            <FamilyPanel
+              result={familyResult}
+              isClassifying={isClassifying}
+              error={familyError}
+            />
+            <AnalysisPanel
+              features={features}
+              isAnalyzing={isAnalyzing}
+              error={analysisError}
+            />
+          </div>
         }
       />
 

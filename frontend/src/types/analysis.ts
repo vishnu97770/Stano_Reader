@@ -19,3 +19,17 @@ export interface StrokeFeatures {
   is_curve: boolean;
   curvature_ratio: number;
 }
+
+// M5 — Family classification types
+
+export interface FamilyMatch {
+  family: string;
+  confidence: number;
+}
+
+export interface FamilyResult {
+  stroke_id: string;
+  family: string;
+  confidence: number;
+  alternatives: FamilyMatch[];
+}
