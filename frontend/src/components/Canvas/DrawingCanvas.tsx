@@ -5,6 +5,7 @@ import {
   useEffect,
 } from 'react';
 import type { Stroke } from '../../types/stroke';
+import type { StrokeRecord } from '../../types/session';
 import { useCanvas } from '../../hooks/useCanvas';
 import CanvasOverlay from './CanvasOverlay';
 
@@ -18,6 +19,7 @@ interface DrawingCanvasProps {
 export interface DrawingCanvasHandle {
   clear: () => void;
   drawRemoteStroke: (stroke: Stroke, penColor: string, penWidth: number) => void;
+  loadStrokes: (strokes: StrokeRecord[]) => void;
 }
 
 const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(
@@ -30,12 +32,13 @@ const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(
       endStroke,
       clearCanvas,
       drawRemoteStroke,
+      loadStrokes,
     } = useCanvas({ penColor, penWidth, onStrokeComplete });
 
     useImperativeHandle(
       ref,
-      () => ({ clear: clearCanvas, drawRemoteStroke }),
-      [clearCanvas, drawRemoteStroke],
+      () => ({ clear: clearCanvas, drawRemoteStroke, loadStrokes }),
+      [clearCanvas, drawRemoteStroke, loadStrokes],
     );
 
     // Size the canvas buffer to match CSS size × devicePixelRatio for sharp rendering.

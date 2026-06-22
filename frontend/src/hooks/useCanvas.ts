@@ -1,6 +1,7 @@
 import { useRef, useCallback, useState, useEffect } from 'react';
 import type { RefObject } from 'react';
 import type { Stroke, StrokePoint } from '../types/stroke';
+import type { StrokeRecord } from '../types/session';
 import { drawStrokeOnContext } from '../utils/drawStroke';
 
 interface UseCanvasOptions {
@@ -17,6 +18,7 @@ interface UseCanvasReturn {
   endStroke: () => void;
   clearCanvas: () => void;
   drawRemoteStroke: (stroke: Stroke, penColor: string, penWidth: number) => void;
+  loadStrokes: (strokes: StrokeRecord[]) => void;
 }
 
 export function useCanvas({
@@ -130,5 +132,25 @@ export function useCanvas({
     [],
   );
 
-  return { canvasRef, strokes, startStroke, continueStroke, endStroke, clearCanvas, drawRemoteStroke };
+  // Clear the canvas and replay a set of persisted strokes loaded from the backend.
+  const loadStrokes = useCallback((records: StrokeRecord[]) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setStrokes([]);
+
+    records.forEach((r) => {
+      drawStrokeOnContext(
+        ctx,
+        { id: r.id, points: r.points },
+        r.pen_color,
+        r.pen_width,
+      );
+    });
+  }, []);
+
+  return { canvasRef, strokes, startStroke, continueStroke, endStroke, clearCanvas, drawRemoteStroke, loadStrokes };
 }

@@ -1,11 +1,15 @@
-import { useRef, useState, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Header from '../components/Header/Header';
+import SessionBar from '../components/SessionBar/SessionBar';
 import Workspace from '../components/Workspace/Workspace';
 import DrawingCanvas from '../components/Canvas/DrawingCanvas';
 import type { DrawingCanvasHandle } from '../components/Canvas/DrawingCanvas';
 import OutputPanel from '../components/OutputPanel/OutputPanel';
 import Toolbar from '../components/Toolbar/Toolbar';
 import { useSocket } from '../hooks/useSocket';
+import { useSession } from '../hooks/useSession';
+import type { Stroke } from '../types/stroke';
+import type { StrokeCreatePayload } from '../types/session';
 
 export default function WritingPage() {
   const [sessionId] = useState<string>(() => crypto.randomUUID());
@@ -14,12 +18,30 @@ export default function WritingPage() {
 
   const canvasRef = useRef<DrawingCanvasHandle>(null);
   const { status, emitStroke, remoteStrokes } = useSocket(sessionId);
+  const {
+    sessions,
+    activeSession,
+    isSaving,
+    isLoading,
+    createAndSave,
+    appendStrokes,
+    loadSession,
+    startNewSession,
+  } = useSession();
 
-  // Track the index of the last remote stroke that has been rendered.
-  // When remoteStrokes grows, we render only the new entries so we never
-  // redraw strokes that are already on the canvas.
+  // Ref-track pen values so stroke callbacks always capture the current setting
+  // without needing to re-create the callback on every color/width change.
+  const penColorRef = useRef(penColor);
+  const penWidthRef = useRef(penWidth);
+  useEffect(() => { penColorRef.current = penColor; }, [penColor]);
+  useEffect(() => { penWidthRef.current = penWidth; }, [penWidth]);
+
+  // Accumulates strokes drawn since the last Save (or Load / New).
+  // Using a ref avoids re-renders on every stroke.
+  const pendingStrokes = useRef<StrokeCreatePayload[]>([]);
+
+  // ── Remote stroke rendering (Milestone 2) ────────────────────────────────
   const lastRenderedRemoteRef = useRef(0);
-
   useEffect(() => {
     for (let i = lastRenderedRemoteRef.current; i < remoteStrokes.length; i++) {
       const { stroke, penColor: color, penWidth: width } = remoteStrokes[i];
@@ -28,9 +50,66 @@ export default function WritingPage() {
     lastRenderedRemoteRef.current = remoteStrokes.length;
   }, [remoteStrokes]);
 
+  // ── Stroke completion handler ─────────────────────────────────────────────
+  const handleStrokeComplete = useCallback(
+    (stroke: Stroke) => {
+      pendingStrokes.current.push({
+        id: stroke.id,
+        points: stroke.points,
+        pen_color: penColorRef.current,
+        pen_width: penWidthRef.current,
+      });
+      emitStroke(stroke, penColorRef.current, penWidthRef.current);
+    },
+    [emitStroke],
+  );
+
+  // ── Session actions ───────────────────────────────────────────────────────
+  const handleSave = useCallback(
+    async (name: string) => {
+      if (activeSession) {
+        await appendStrokes(pendingStrokes.current);
+      } else {
+        await createAndSave(name, pendingStrokes.current);
+      }
+      pendingStrokes.current = [];
+    },
+    [activeSession, appendStrokes, createAndSave],
+  );
+
+  const handleLoad = useCallback(
+    async (id: string) => {
+      const session = await loadSession(id);
+      pendingStrokes.current = [];
+      canvasRef.current?.loadStrokes(session.strokes);
+    },
+    [loadSession],
+  );
+
+  const handleNew = useCallback(() => {
+    startNewSession();
+    pendingStrokes.current = [];
+    canvasRef.current?.clear();
+  }, [startNewSession]);
+
+  const handleClear = useCallback(() => {
+    canvasRef.current?.clear();
+    pendingStrokes.current = [];
+  }, []);
+
   return (
     <div className="h-screen flex flex-col bg-gray-100 overflow-hidden">
       <Header connectionStatus={status} />
+
+      <SessionBar
+        activeSession={activeSession}
+        sessions={sessions}
+        isSaving={isSaving}
+        isLoading={isLoading}
+        onSave={(name) => { void handleSave(name); }}
+        onLoad={(id) => { void handleLoad(id); }}
+        onNew={handleNew}
+      />
 
       <Workspace
         canvas={
@@ -39,7 +118,7 @@ export default function WritingPage() {
             penColor={penColor}
             penWidth={penWidth}
             remoteStrokeCount={remoteStrokes.length}
-            onStrokeComplete={(stroke) => emitStroke(stroke, penColor, penWidth)}
+            onStrokeComplete={handleStrokeComplete}
           />
         }
         outputPanel={<OutputPanel />}
@@ -50,7 +129,7 @@ export default function WritingPage() {
         penWidth={penWidth}
         onColorChange={setPenColor}
         onWidthChange={setPenWidth}
-        onClear={() => canvasRef.current?.clear()}
+        onClear={handleClear}
       />
     </div>
   );
