@@ -23,9 +23,17 @@ def create_socket_server() -> socketio.AsyncServer:
         stroke_id: str = stroke.get("id", "unknown")
         session_id: str = data.get("sessionId", "unknown")
         point_count: int = len(stroke.get("points", []))
+
         print(
             f"[socket] stroke | session={session_id} id={stroke_id} points={point_count}"
         )
+
+        # Acknowledge receipt to the sender
         await sio.emit("stroke_ack", stroke_id, to=sid)
+
+        # Broadcast the full payload to every other connected client.
+        # skip_sid ensures the sender does not receive their own stroke back,
+        # which prevents duplicate rendering on the drawing client.
+        await sio.emit("stroke_broadcast", data, skip_sid=sid)
 
     return sio

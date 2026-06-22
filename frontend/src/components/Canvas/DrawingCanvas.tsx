@@ -11,19 +11,32 @@ import CanvasOverlay from './CanvasOverlay';
 interface DrawingCanvasProps {
   penColor: string;
   penWidth: number;
+  remoteStrokeCount: number;
   onStrokeComplete: (stroke: Stroke) => void;
 }
 
 export interface DrawingCanvasHandle {
   clear: () => void;
+  drawRemoteStroke: (stroke: Stroke, penColor: string, penWidth: number) => void;
 }
 
 const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(
-  ({ penColor, penWidth, onStrokeComplete }, ref) => {
-    const { canvasRef, strokes, startStroke, continueStroke, endStroke, clearCanvas } =
-      useCanvas({ penColor, penWidth, onStrokeComplete });
+  ({ penColor, penWidth, remoteStrokeCount, onStrokeComplete }, ref) => {
+    const {
+      canvasRef,
+      strokes,
+      startStroke,
+      continueStroke,
+      endStroke,
+      clearCanvas,
+      drawRemoteStroke,
+    } = useCanvas({ penColor, penWidth, onStrokeComplete });
 
-    useImperativeHandle(ref, () => ({ clear: clearCanvas }), [clearCanvas]);
+    useImperativeHandle(
+      ref,
+      () => ({ clear: clearCanvas, drawRemoteStroke }),
+      [clearCanvas, drawRemoteStroke],
+    );
 
     // Size the canvas buffer to match CSS size × devicePixelRatio for sharp rendering.
     // Resizing resets the canvas context transform, so ctx.scale is reapplied each time.
@@ -77,7 +90,7 @@ const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(
           className="w-full h-full cursor-crosshair"
           style={{ touchAction: 'none' }}
         />
-        <CanvasOverlay strokeCount={strokes.length} />
+        <CanvasOverlay localCount={strokes.length} remoteCount={remoteStrokeCount} />
       </div>
     );
   },

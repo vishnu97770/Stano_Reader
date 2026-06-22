@@ -1,6 +1,7 @@
 import { useRef, useCallback, useState, useEffect } from 'react';
 import type { RefObject } from 'react';
 import type { Stroke, StrokePoint } from '../types/stroke';
+import { drawStrokeOnContext } from '../utils/drawStroke';
 
 interface UseCanvasOptions {
   penColor: string;
@@ -15,6 +16,7 @@ interface UseCanvasReturn {
   continueStroke: (e: PointerEvent) => void;
   endStroke: () => void;
   clearCanvas: () => void;
+  drawRemoteStroke: (stroke: Stroke, penColor: string, penWidth: number) => void;
 }
 
 export function useCanvas({
@@ -119,5 +121,14 @@ export function useCanvas({
     setStrokes([]);
   }, []);
 
-  return { canvasRef, strokes, startStroke, continueStroke, endStroke, clearCanvas };
+  const drawRemoteStroke = useCallback(
+    (stroke: Stroke, penColor: string, penWidth: number) => {
+      const ctx = canvasRef.current?.getContext('2d') ?? null;
+      if (!ctx) return;
+      drawStrokeOnContext(ctx, stroke, penColor, penWidth);
+    },
+    [],
+  );
+
+  return { canvasRef, strokes, startStroke, continueStroke, endStroke, clearCanvas, drawRemoteStroke };
 }
