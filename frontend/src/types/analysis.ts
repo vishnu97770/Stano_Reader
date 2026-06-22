@@ -33,3 +33,21 @@ export interface FamilyResult {
   confidence: number;
   alternatives: FamilyMatch[];
 }
+
+// M6 — Exact symbol classification types
+
+export interface SymbolMatch {
+  symbol: string;
+  confidence: number;
+}
+
+export interface SymbolResult {
+  stroke_id: string;
+  family: string;
+  family_confidence: number;
+  symbol: string;
+  confidence: number;
+  alternatives: SymbolMatch[];
+  thickness_missing: boolean;
+  reason: string | null;
+}

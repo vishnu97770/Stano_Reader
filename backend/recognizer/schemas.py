@@ -41,3 +41,23 @@ class FamilyResult(BaseModel):
     family: str                         # best-matching family, or "UNKNOWN"
     confidence: float                   # score of the best match
     alternatives: list[FamilyMatch]     # other families above noise floor, sorted desc
+
+
+# ---------------------------------------------------------------------------
+# M6 — Exact symbol classification schemas
+# ---------------------------------------------------------------------------
+
+class SymbolMatch(BaseModel):
+    symbol: str
+    confidence: float   # [0, 1]
+
+
+class SymbolResult(BaseModel):
+    stroke_id: str
+    family: str                         # inherited from FamilyResult
+    family_confidence: float            # family-level confidence (for display context)
+    symbol: str                         # best-matching symbol, or "UNKNOWN"
+    confidence: float                   # symbol-level confidence
+    alternatives: list[SymbolMatch]     # other symbols above noise floor, sorted desc
+    thickness_missing: bool             # True when voiced/unvoiced required pressure data
+    reason: str | None                  # human-readable explanation of any limitation

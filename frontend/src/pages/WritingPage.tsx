@@ -5,12 +5,12 @@ import Workspace from '../components/Workspace/Workspace';
 import DrawingCanvas from '../components/Canvas/DrawingCanvas';
 import type { DrawingCanvasHandle } from '../components/Canvas/DrawingCanvas';
 import AnalysisPanel from '../components/AnalysisPanel/AnalysisPanel';
-import FamilyPanel from '../components/FamilyPanel/FamilyPanel';
+import SymbolPanel from '../components/SymbolPanel/SymbolPanel';
 import Toolbar from '../components/Toolbar/Toolbar';
 import { useSocket } from '../hooks/useSocket';
 import { useSession } from '../hooks/useSession';
 import { useStrokeAnalysis } from '../hooks/useStrokeAnalysis';
-import { useStrokeFamily } from '../hooks/useStrokeFamily';
+import { useStrokeSymbol } from '../hooks/useStrokeSymbol';
 import type { Stroke } from '../types/stroke';
 import type { StrokeCreatePayload } from '../types/session';
 
@@ -22,7 +22,7 @@ export default function WritingPage() {
   const canvasRef = useRef<DrawingCanvasHandle>(null);
   const { status, emitStroke, remoteStrokes } = useSocket(sessionId);
   const { features, isAnalyzing, error: analysisError, analyzeStroke } = useStrokeAnalysis();
-  const { result: familyResult, isClassifying, error: familyError, classifyFamily } = useStrokeFamily();
+  const { result: symbolResult, isClassifying, error: symbolError, classifySymbol } = useStrokeSymbol();
   const {
     sessions,
     activeSession,
@@ -66,9 +66,9 @@ export default function WritingPage() {
       });
       emitStroke(stroke, penColorRef.current, penWidthRef.current);
       void analyzeStroke(stroke.id, stroke.points);
-      void classifyFamily(stroke.id, stroke.points);
+      void classifySymbol(stroke.id, stroke.points);
     },
-    [emitStroke, analyzeStroke, classifyFamily],
+    [emitStroke, analyzeStroke, classifySymbol],
   );
 
   // ── Session actions ───────────────────────────────────────────────────────
@@ -130,10 +130,10 @@ export default function WritingPage() {
         }
         outputPanel={
           <div className="flex flex-col gap-3 h-full overflow-y-auto">
-            <FamilyPanel
-              result={familyResult}
+            <SymbolPanel
+              result={symbolResult}
               isClassifying={isClassifying}
-              error={familyError}
+              error={symbolError}
             />
             <AnalysisPanel
               features={features}
