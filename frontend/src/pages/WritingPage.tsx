@@ -4,10 +4,11 @@ import SessionBar from '../components/SessionBar/SessionBar';
 import Workspace from '../components/Workspace/Workspace';
 import DrawingCanvas from '../components/Canvas/DrawingCanvas';
 import type { DrawingCanvasHandle } from '../components/Canvas/DrawingCanvas';
-import OutputPanel from '../components/OutputPanel/OutputPanel';
+import AnalysisPanel from '../components/AnalysisPanel/AnalysisPanel';
 import Toolbar from '../components/Toolbar/Toolbar';
 import { useSocket } from '../hooks/useSocket';
 import { useSession } from '../hooks/useSession';
+import { useStrokeAnalysis } from '../hooks/useStrokeAnalysis';
 import type { Stroke } from '../types/stroke';
 import type { StrokeCreatePayload } from '../types/session';
 
@@ -18,6 +19,7 @@ export default function WritingPage() {
 
   const canvasRef = useRef<DrawingCanvasHandle>(null);
   const { status, emitStroke, remoteStrokes } = useSocket(sessionId);
+  const { features, isAnalyzing, error: analysisError, analyzeStroke } = useStrokeAnalysis();
   const {
     sessions,
     activeSession,
@@ -60,8 +62,9 @@ export default function WritingPage() {
         pen_width: penWidthRef.current,
       });
       emitStroke(stroke, penColorRef.current, penWidthRef.current);
+      void analyzeStroke(stroke.id, stroke.points);
     },
-    [emitStroke],
+    [emitStroke, analyzeStroke],
   );
 
   // ── Session actions ───────────────────────────────────────────────────────
@@ -121,7 +124,13 @@ export default function WritingPage() {
             onStrokeComplete={handleStrokeComplete}
           />
         }
-        outputPanel={<OutputPanel />}
+        outputPanel={
+          <AnalysisPanel
+            features={features}
+            isAnalyzing={isAnalyzing}
+            error={analysisError}
+          />
+        }
       />
 
       <Toolbar
