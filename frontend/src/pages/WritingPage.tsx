@@ -5,6 +5,7 @@ import Workspace from '../components/Workspace/Workspace';
 import DrawingCanvas from '../components/Canvas/DrawingCanvas';
 import type { DrawingCanvasHandle } from '../components/Canvas/DrawingCanvas';
 import AnalysisPanel from '../components/AnalysisPanel/AnalysisPanel';
+import CandidatePanel from '../components/CandidatePanel/CandidatePanel';
 import OutlinePanel from '../components/OutlinePanel/OutlinePanel';
 import PhonemePanel from '../components/PhonemePanel/PhonemePanel';
 import SymbolPanel from '../components/SymbolPanel/SymbolPanel';
@@ -12,6 +13,7 @@ import WeightPanel from '../components/WeightPanel/WeightPanel';
 import Toolbar from '../components/Toolbar/Toolbar';
 import { useSocket } from '../hooks/useSocket';
 import { useSession } from '../hooks/useSession';
+import { useCandidates } from '../hooks/useCandidates';
 import { useOutline } from '../hooks/useOutline';
 import { usePhoneme } from '../hooks/usePhoneme';
 import { useStrokeAnalysis } from '../hooks/useStrokeAnalysis';
@@ -32,6 +34,7 @@ export default function WritingPage() {
   const { result: weightResult, isClassifying: isWeightClassifying, error: weightError, classifyWeight } = useStrokeWeight();
   const { outline, isRebuilding, addStroke, clearOutline, rebuildFromStrokes } = useOutline();
   const { phonemes, isMapping, error: phonemeError } = usePhoneme(outline);
+  const { candidates, isLoading: isCandidateLoading, error: candidateError } = useCandidates(phonemes);
   const {
     sessions,
     activeSession,
@@ -152,6 +155,11 @@ export default function WritingPage() {
               phonemes={phonemes}
               isMapping={isMapping}
               error={phonemeError}
+            />
+            <CandidatePanel
+              candidates={candidates}
+              isLoading={isCandidateLoading}
+              error={candidateError}
             />
             <SymbolPanel
               result={symbolResult}

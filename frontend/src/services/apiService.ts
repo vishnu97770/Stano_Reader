@@ -1,4 +1,5 @@
 import type { FamilyResult, StrokeFeatures, SymbolResult, WeightResult } from '../types/analysis';
+import type { CandidateResponse } from '../types/candidate';
 import type { PhonemeResponse } from '../types/phoneme';
 import type { SessionDetail, SessionSummary, StrokeCreatePayload } from '../types/session';
 import type { StrokePoint } from '../types/stroke';
@@ -44,6 +45,14 @@ export const api = {
       request('/api/classify-weight', {
         method: 'POST',
         body: JSON.stringify({ stroke_id: strokeId, points }),
+      }),
+  },
+
+  candidates: {
+    get: (phonemes: string[], maxResults = 10): Promise<CandidateResponse> =>
+      request('/api/candidates', {
+        method: 'POST',
+        body: JSON.stringify({ phonemes, max_results: maxResults }),
       }),
   },
 
