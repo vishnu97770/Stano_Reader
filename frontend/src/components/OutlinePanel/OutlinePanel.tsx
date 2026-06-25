@@ -28,40 +28,35 @@ export default function OutlinePanel({ outline, isRebuilding }: OutlinePanelProp
         {isRebuilding && (
           <span className="ml-auto text-xs text-indigo-500 animate-pulse">rebuilding…</span>
         )}
-        {!isRebuilding && strokes.length > 0 && (
-          <span className="ml-auto text-[10px] text-gray-400 font-mono">
-            {strokes.length} {strokes.length === 1 ? 'symbol' : 'symbols'}
-          </span>
+      </div>
+
+      {/* Outline text area */}
+      <div className="flex flex-col items-center justify-center px-4 py-6 min-h-[7rem]">
+        {strokes.length === 0 && !isRebuilding ? (
+          <p className="text-xs text-gray-400">Draw strokes to build the outline.</p>
+        ) : (
+          <p className="text-5xl font-bold font-mono tracking-widest text-gray-900 leading-tight break-all text-center w-full">
+            {symbolString}
+          </p>
         )}
       </div>
 
-      <div className="px-4 py-3 space-y-3">
-        {/* Empty state */}
-        {strokes.length === 0 && !isRebuilding && (
-          <p className="text-xs text-gray-400">Draw strokes to build the outline.</p>
-        )}
-
-        {/* Outline string */}
-        {strokes.length > 0 && (
-          <div className="min-h-[3rem] flex items-center">
-            <span className="text-4xl font-bold font-mono tracking-widest text-gray-900 leading-none break-all">
-              {symbolString}
-            </span>
-          </div>
-        )}
-
-        {/* Last recognized symbol */}
-        {last && (
-          <div className="flex items-center justify-between pt-1 border-t border-gray-100">
-            <span className="text-[10px] text-gray-400 uppercase tracking-wider">Last</span>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-400 font-mono">{familyShort(last.family)}</span>
+      {/* Footer stats */}
+      {strokes.length > 0 && (
+        <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
+          <span className="text-xs text-gray-400">
+            {strokes.length} {strokes.length === 1 ? 'symbol' : 'symbols'}
+          </span>
+          {last && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-gray-400">Last</span>
+              <span className="text-[10px] text-gray-400 font-mono">{familyShort(last.family)}</span>
               <span className="text-sm font-bold font-mono text-indigo-600">{last.symbol}</span>
               <span className="text-[10px] text-gray-400 font-mono">{pct(last.confidence)}</span>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
