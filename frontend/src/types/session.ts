@@ -23,6 +23,7 @@ export interface SessionDetail {
   created_at: string;
   updated_at: string;
   strokes: StrokeRecord[];
+  transcript: string[];
 }
 
 // Shape sent to POST /api/sessions/{id}/strokes — matches backend StrokeCreate schema

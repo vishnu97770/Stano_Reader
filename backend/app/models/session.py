@@ -23,6 +23,8 @@ class WritingSession(Base):
         nullable=False,
     )
 
+    transcript: Mapped[str] = mapped_column(String, nullable=False, default="[]")
+
     strokes: Mapped[list["StrokeEntry"]] = relationship(
         "StrokeEntry",
         back_populates="session",

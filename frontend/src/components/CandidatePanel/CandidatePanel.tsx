@@ -4,6 +4,7 @@ interface CandidatePanelProps {
   candidates: CandidateResult[];
   isLoading: boolean;
   error: string | null;
+  onSelect?: (word: string) => void;
 }
 
 function pct(confidence: number): string {
@@ -16,7 +17,7 @@ function confidenceColor(confidence: number): string {
   return 'bg-gray-300';
 }
 
-export default function CandidatePanel({ candidates, isLoading, error }: CandidatePanelProps) {
+export default function CandidatePanel({ candidates, isLoading, error, onSelect }: CandidatePanelProps) {
   return (
     <div className="flex flex-col shrink-0 bg-white rounded-lg border border-gray-200">
       {/* Header */}
@@ -45,31 +46,37 @@ export default function CandidatePanel({ candidates, isLoading, error }: Candida
         )}
 
         {candidates.length > 0 && (
-          <ol className="space-y-2">
+          <ol className="space-y-1">
             {candidates.map((c, index) => (
-              <li key={c.word} className="flex items-center gap-3">
-                {/* Rank */}
-                <span className="text-[10px] text-gray-400 font-mono w-4 shrink-0 text-right">
-                  {index + 1}.
-                </span>
+              <li key={c.word}>
+                <button
+                  onClick={() => onSelect?.(c.word)}
+                  disabled={!onSelect}
+                  className="w-full flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-indigo-50 disabled:hover:bg-transparent transition-colors text-left group"
+                >
+                  {/* Rank */}
+                  <span className="text-[10px] text-gray-400 font-mono w-4 shrink-0 text-right">
+                    {index + 1}.
+                  </span>
 
-                {/* Word */}
-                <span className="text-sm font-semibold text-gray-900 w-24 shrink-0 truncate">
-                  {c.word}
-                </span>
+                  {/* Word */}
+                  <span className="text-sm font-semibold text-gray-900 w-24 shrink-0 truncate group-hover:text-indigo-700 transition-colors">
+                    {c.word}
+                  </span>
 
-                {/* Confidence bar */}
-                <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-300 ${confidenceColor(c.confidence)}`}
-                    style={{ width: pct(c.confidence) }}
-                  />
-                </div>
+                  {/* Confidence bar */}
+                  <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${confidenceColor(c.confidence)}`}
+                      style={{ width: pct(c.confidence) }}
+                    />
+                  </div>
 
-                {/* Confidence label */}
-                <span className="text-[10px] font-mono text-gray-400 w-8 text-right shrink-0">
-                  {pct(c.confidence)}
-                </span>
+                  {/* Confidence label */}
+                  <span className="text-[10px] font-mono text-gray-400 w-8 text-right shrink-0">
+                    {pct(c.confidence)}
+                  </span>
+                </button>
               </li>
             ))}
           </ol>

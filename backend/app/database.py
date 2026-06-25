@@ -16,6 +16,19 @@ class Base(DeclarativeBase):
     pass
 
 
+def run_migrations() -> None:
+    """Apply column additions that `create_all` cannot handle on existing databases."""
+    from sqlalchemy import text
+    with engine.connect() as conn:
+        try:
+            conn.execute(
+                text("ALTER TABLE sessions ADD COLUMN transcript TEXT NOT NULL DEFAULT '[]'")
+            )
+            conn.commit()
+        except Exception:
+            pass  # Column already exists — this is expected on repeated starts
+
+
 def get_db():
     db: Session = SessionLocal()
     try:

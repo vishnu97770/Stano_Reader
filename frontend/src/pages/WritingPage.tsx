@@ -9,6 +9,7 @@ import CandidatePanel from '../components/CandidatePanel/CandidatePanel';
 import OutlinePanel from '../components/OutlinePanel/OutlinePanel';
 import PhonemePanel from '../components/PhonemePanel/PhonemePanel';
 import SymbolPanel from '../components/SymbolPanel/SymbolPanel';
+import TranscriptPanel from '../components/TranscriptPanel/TranscriptPanel';
 import WeightPanel from '../components/WeightPanel/WeightPanel';
 import Toolbar from '../components/Toolbar/Toolbar';
 import { useSocket } from '../hooks/useSocket';
@@ -19,6 +20,8 @@ import { usePhoneme } from '../hooks/usePhoneme';
 import { useStrokeAnalysis } from '../hooks/useStrokeAnalysis';
 import { useStrokeSymbol } from '../hooks/useStrokeSymbol';
 import { useStrokeWeight } from '../hooks/useStrokeWeight';
+import { useTranscript } from '../hooks/useTranscript';
+import { api } from '../services/apiService';
 import type { Stroke } from '../types/stroke';
 import type { StrokeCreatePayload } from '../types/session';
 
@@ -35,6 +38,7 @@ export default function WritingPage() {
   const { outline, isRebuilding, addStroke, clearOutline, rebuildFromStrokes } = useOutline();
   const { phonemes, isMapping, error: phonemeError } = usePhoneme(outline);
   const { candidates, isLoading: isCandidateLoading, error: candidateError } = useCandidates(phonemes);
+  const { words, appendWord, undoLast, clearTranscript, setTranscript } = useTranscript();
   const {
     sessions,
     activeSession,
@@ -54,10 +58,9 @@ export default function WritingPage() {
   useEffect(() => { penWidthRef.current = penWidth; }, [penWidth]);
 
   // Accumulates strokes drawn since the last Save (or Load / New).
-  // Using a ref avoids re-renders on every stroke.
   const pendingStrokes = useRef<StrokeCreatePayload[]>([]);
 
-  // ── Remote stroke rendering (Milestone 2) ────────────────────────────────
+  // ── Remote stroke rendering ───────────────────────────────────────────────
   const lastRenderedRemoteRef = useRef(0);
   useEffect(() => {
     for (let i = lastRenderedRemoteRef.current; i < remoteStrokes.length; i++) {
@@ -85,17 +88,28 @@ export default function WritingPage() {
     [emitStroke, analyzeStroke, classifySymbol, classifyWeight, addStroke],
   );
 
+  // ── Candidate selection: append word, clear outline ───────────────────────
+  const handleSelectCandidate = useCallback(
+    (word: string) => {
+      appendWord(word);
+      clearOutline();
+    },
+    [appendWord, clearOutline],
+  );
+
   // ── Session actions ───────────────────────────────────────────────────────
   const handleSave = useCallback(
     async (name: string) => {
       if (activeSession) {
         await appendStrokes(pendingStrokes.current);
+        await api.sessions.saveTranscript(activeSession.id, words);
       } else {
-        await createAndSave(name, pendingStrokes.current);
+        const session = await createAndSave(name, pendingStrokes.current);
+        await api.sessions.saveTranscript(session.id, words);
       }
       pendingStrokes.current = [];
     },
-    [activeSession, appendStrokes, createAndSave],
+    [activeSession, appendStrokes, createAndSave, words],
   );
 
   const handleLoad = useCallback(
@@ -104,8 +118,9 @@ export default function WritingPage() {
       pendingStrokes.current = [];
       canvasRef.current?.loadStrokes(session.strokes);
       await rebuildFromStrokes(session.strokes);
+      setTranscript(session.transcript ?? []);
     },
-    [loadSession, rebuildFromStrokes],
+    [loadSession, rebuildFromStrokes, setTranscript],
   );
 
   const handleNew = useCallback(() => {
@@ -113,7 +128,8 @@ export default function WritingPage() {
     pendingStrokes.current = [];
     canvasRef.current?.clear();
     clearOutline();
-  }, [startNewSession, clearOutline]);
+    clearTranscript();
+  }, [startNewSession, clearOutline, clearTranscript]);
 
   const handleClear = useCallback(() => {
     canvasRef.current?.clear();
@@ -160,6 +176,12 @@ export default function WritingPage() {
               candidates={candidates}
               isLoading={isCandidateLoading}
               error={candidateError}
+              onSelect={handleSelectCandidate}
+            />
+            <TranscriptPanel
+              words={words}
+              onUndo={undoLast}
+              onClear={clearTranscript}
             />
             <SymbolPanel
               result={symbolResult}

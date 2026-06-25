@@ -3,6 +3,7 @@ import type { CandidateResponse } from '../types/candidate';
 import type { PhonemeResponse } from '../types/phoneme';
 import type { SessionDetail, SessionSummary, StrokeCreatePayload } from '../types/session';
 import type { StrokePoint } from '../types/stroke';
+import type { TranscriptSaveResponse } from '../types/transcript';
 
 const BASE_URL =
   (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8000';
@@ -82,6 +83,15 @@ export const api = {
       request(`/api/sessions/${id}/strokes`, {
         method: 'POST',
         body: JSON.stringify({ strokes }),
+      }),
+
+    saveTranscript: (
+      id: string,
+      words: string[],
+    ): Promise<TranscriptSaveResponse> =>
+      request(`/api/sessions/${id}/transcript`, {
+        method: 'PATCH',
+        body: JSON.stringify({ words }),
       }),
   },
 };

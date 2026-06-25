@@ -23,3 +23,4 @@ class SessionDetail(BaseModel):
     created_at: datetime
     updated_at: datetime
     strokes: list[StrokeResponse]
+    transcript: list[str] = []

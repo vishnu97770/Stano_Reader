@@ -1,3 +1,4 @@
+import json
 import uuid
 from datetime import UTC, datetime
 
@@ -58,13 +59,26 @@ def get_session(db: DbSession, session_id: str) -> SessionDetail | None:
     if not record:
         return None
     strokes = [StrokeResponse.model_validate(s) for s in record.strokes]
+    try:
+        transcript: list[str] = json.loads(record.transcript)
+    except Exception:
+        transcript = []
     return SessionDetail(
         id=record.id,
         name=record.name,
         created_at=record.created_at,
         updated_at=record.updated_at,
         strokes=strokes,
+        transcript=transcript,
     )
+
+
+def save_transcript(db: DbSession, session_id: str, words: list[str]) -> bool:
+    rows = db.query(WritingSession).filter(WritingSession.id == session_id).update(
+        {"transcript": json.dumps(words), "updated_at": datetime.now(UTC)}
+    )
+    db.commit()
+    return rows > 0
 
 
 def touch_session(db: DbSession, session_id: str) -> None:

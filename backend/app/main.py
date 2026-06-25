@@ -4,13 +4,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.socket.events import create_socket_server
-from app.database import engine, Base
+from app.database import engine, Base, run_migrations
 from app.api.router import api_router
 
 # Import models so Base.metadata is populated before create_all
 import app.models  # noqa: F401
 
 Base.metadata.create_all(bind=engine)
+run_migrations()
 
 sio = create_socket_server()
 

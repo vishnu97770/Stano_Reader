@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session as DbSession
 from app.database import get_db
 from app.schemas.session import SessionCreate, SessionDetail, SessionSummary
 from app.schemas.stroke import StrokesBulkCreate, StrokesSavedResponse
+from app.schemas.transcript import TranscriptSaveRequest, TranscriptSaveResponse
 from app.services import session_service, stroke_service
 
 router = APIRouter(prefix="/api/sessions", tags=["sessions"])
@@ -42,3 +43,15 @@ def save_strokes(
     count = stroke_service.save_strokes(db, session_id, body.strokes)
     session_service.touch_session(db, session_id)
     return StrokesSavedResponse(saved=count)
+
+
+@router.patch("/{session_id}/transcript", response_model=TranscriptSaveResponse)
+def save_transcript(
+    session_id: str,
+    body: TranscriptSaveRequest,
+    db: DbSession = Depends(get_db),
+) -> TranscriptSaveResponse:
+    if not session_service.get_session(db, session_id):
+        raise HTTPException(status_code=404, detail="Session not found")
+    saved = session_service.save_transcript(db, session_id, body.words)
+    return TranscriptSaveResponse(saved=saved)
