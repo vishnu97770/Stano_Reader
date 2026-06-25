@@ -22,7 +22,7 @@ function confidenceColor(confidence: number): string {
 
 export default function SymbolPanel({ result, isClassifying, error }: SymbolPanelProps) {
   return (
-    <div className="flex flex-col bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <div className="flex flex-col shrink-0 bg-white rounded-lg border border-gray-200 overflow-hidden">
       {/* Header */}
       <div className="px-4 py-3 border-b border-gray-200 flex items-center gap-2">
         <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">

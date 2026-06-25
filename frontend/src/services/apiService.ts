@@ -1,4 +1,5 @@
 import type { FamilyResult, StrokeFeatures, SymbolResult, WeightResult } from '../types/analysis';
+import type { PhonemeResponse } from '../types/phoneme';
 import type { SessionDetail, SessionSummary, StrokeCreatePayload } from '../types/session';
 import type { StrokePoint } from '../types/stroke';
 
@@ -43,6 +44,14 @@ export const api = {
       request('/api/classify-weight', {
         method: 'POST',
         body: JSON.stringify({ stroke_id: strokeId, points }),
+      }),
+  },
+
+  phonemes: {
+    map: (symbols: string[]): Promise<PhonemeResponse> =>
+      request('/api/phonemes', {
+        method: 'POST',
+        body: JSON.stringify({ symbols }),
       }),
   },
 

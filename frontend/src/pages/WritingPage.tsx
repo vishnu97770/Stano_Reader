@@ -6,12 +6,14 @@ import DrawingCanvas from '../components/Canvas/DrawingCanvas';
 import type { DrawingCanvasHandle } from '../components/Canvas/DrawingCanvas';
 import AnalysisPanel from '../components/AnalysisPanel/AnalysisPanel';
 import OutlinePanel from '../components/OutlinePanel/OutlinePanel';
+import PhonemePanel from '../components/PhonemePanel/PhonemePanel';
 import SymbolPanel from '../components/SymbolPanel/SymbolPanel';
 import WeightPanel from '../components/WeightPanel/WeightPanel';
 import Toolbar from '../components/Toolbar/Toolbar';
 import { useSocket } from '../hooks/useSocket';
 import { useSession } from '../hooks/useSession';
 import { useOutline } from '../hooks/useOutline';
+import { usePhoneme } from '../hooks/usePhoneme';
 import { useStrokeAnalysis } from '../hooks/useStrokeAnalysis';
 import { useStrokeSymbol } from '../hooks/useStrokeSymbol';
 import { useStrokeWeight } from '../hooks/useStrokeWeight';
@@ -29,6 +31,7 @@ export default function WritingPage() {
   const { result: symbolResult, isClassifying, error: symbolError, classifySymbol } = useStrokeSymbol();
   const { result: weightResult, isClassifying: isWeightClassifying, error: weightError, classifyWeight } = useStrokeWeight();
   const { outline, isRebuilding, addStroke, clearOutline, rebuildFromStrokes } = useOutline();
+  const { phonemes, isMapping, error: phonemeError } = usePhoneme(outline);
   const {
     sessions,
     activeSession,
@@ -144,6 +147,11 @@ export default function WritingPage() {
             <OutlinePanel
               outline={outline}
               isRebuilding={isRebuilding}
+            />
+            <PhonemePanel
+              phonemes={phonemes}
+              isMapping={isMapping}
+              error={phonemeError}
             />
             <SymbolPanel
               result={symbolResult}

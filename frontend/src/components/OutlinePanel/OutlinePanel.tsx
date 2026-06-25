@@ -19,9 +19,9 @@ export default function OutlinePanel({ outline, isRebuilding }: OutlinePanelProp
   const last = strokes.length > 0 ? strokes[strokes.length - 1] : null;
 
   return (
-    <div className="flex flex-col bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <div className="flex flex-col shrink-0 min-h-[180px] bg-white rounded-lg border border-gray-200">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-gray-200 flex items-center gap-2">
+      <div className="px-4 py-3 border-b border-gray-200 flex items-center gap-2 shrink-0">
         <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
           Current Outline
         </h2>
@@ -30,20 +30,20 @@ export default function OutlinePanel({ outline, isRebuilding }: OutlinePanelProp
         )}
       </div>
 
-      {/* Outline text area */}
-      <div className="flex flex-col items-center justify-center px-4 py-6 min-h-[7rem]">
+      {/* Outline text — grows with content, never clips */}
+      <div className="flex-1 flex items-center justify-center px-4 py-6">
         {strokes.length === 0 && !isRebuilding ? (
           <p className="text-xs text-gray-400">Draw strokes to build the outline.</p>
         ) : (
-          <p className="text-5xl font-bold font-mono tracking-widest text-gray-900 leading-tight break-all text-center w-full">
+          <p className="text-4xl font-bold leading-none font-mono tracking-widest text-gray-900 break-all text-center w-full">
             {symbolString}
           </p>
         )}
       </div>
 
-      {/* Footer stats */}
+      {/* Footer */}
       {strokes.length > 0 && (
-        <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
+        <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between shrink-0">
           <span className="text-xs text-gray-400">
             {strokes.length} {strokes.length === 1 ? 'symbol' : 'symbols'}
           </span>
