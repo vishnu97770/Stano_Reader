@@ -50,10 +50,10 @@ export const api = {
   },
 
   candidates: {
-    get: (phonemes: string[], maxResults = 10): Promise<CandidateResponse> =>
+    get: (phonemes: string[], transcript: string[], maxResults = 10): Promise<CandidateResponse> =>
       request('/api/candidates', {
         method: 'POST',
-        body: JSON.stringify({ phonemes, max_results: maxResults }),
+        body: JSON.stringify({ phonemes, transcript, max_results: maxResults }),
       }),
   },
 

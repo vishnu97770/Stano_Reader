@@ -52,30 +52,42 @@ export default function CandidatePanel({ candidates, isLoading, error, onSelect 
                 <button
                   onClick={() => onSelect?.(c.word)}
                   disabled={!onSelect}
-                  className="w-full flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-indigo-50 disabled:hover:bg-transparent transition-colors text-left group"
+                  className="w-full flex flex-col gap-0.5 px-2 py-1.5 rounded-md hover:bg-indigo-50 disabled:hover:bg-transparent transition-colors text-left group"
                 >
-                  {/* Rank */}
-                  <span className="text-[10px] text-gray-400 font-mono w-4 shrink-0 text-right">
-                    {index + 1}.
-                  </span>
+                  {/* Main row: rank + word + bar + confidence */}
+                  <div className="flex items-center gap-3 w-full">
+                    {/* Rank */}
+                    <span className="text-[10px] text-gray-400 font-mono w-4 shrink-0 text-right">
+                      {index + 1}.
+                    </span>
 
-                  {/* Word */}
-                  <span className="text-sm font-semibold text-gray-900 w-24 shrink-0 truncate group-hover:text-indigo-700 transition-colors">
-                    {c.word}
-                  </span>
+                    {/* Word */}
+                    <span className="text-sm font-semibold text-gray-900 w-24 shrink-0 truncate group-hover:text-indigo-700 transition-colors">
+                      {c.word}
+                    </span>
 
-                  {/* Confidence bar */}
-                  <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-300 ${confidenceColor(c.confidence)}`}
-                      style={{ width: pct(c.confidence) }}
-                    />
+                    {/* Confidence bar */}
+                    <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${confidenceColor(c.confidence)}`}
+                        style={{ width: pct(c.confidence) }}
+                      />
+                    </div>
+
+                    {/* Confidence label */}
+                    <span className="text-[10px] font-mono text-gray-400 w-8 text-right shrink-0">
+                      {pct(c.confidence)}
+                    </span>
                   </div>
 
-                  {/* Confidence label */}
-                  <span className="text-[10px] font-mono text-gray-400 w-8 text-right shrink-0">
-                    {pct(c.confidence)}
-                  </span>
+                  {/* Reasoning row (only when a context rule fired) */}
+                  {c.reasoning && (
+                    <div className="flex items-center gap-1 pl-7">
+                      <span className="text-[10px] text-emerald-600 font-medium leading-none">
+                        {c.reasoning}
+                      </span>
+                    </div>
+                  )}
                 </button>
               </li>
             ))}

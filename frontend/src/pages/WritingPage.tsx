@@ -37,8 +37,8 @@ export default function WritingPage() {
   const { result: weightResult, isClassifying: isWeightClassifying, error: weightError, classifyWeight } = useStrokeWeight();
   const { outline, isRebuilding, addStroke, clearOutline, rebuildFromStrokes } = useOutline();
   const { phonemes, isMapping, error: phonemeError } = usePhoneme(outline);
-  const { candidates, isLoading: isCandidateLoading, error: candidateError } = useCandidates(phonemes);
   const { words, appendWord, undoLast, clearTranscript, setTranscript } = useTranscript();
+  const { candidates, isLoading: isCandidateLoading, error: candidateError } = useCandidates(phonemes, words);
   const {
     sessions,
     activeSession,

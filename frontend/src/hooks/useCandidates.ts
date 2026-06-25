@@ -8,7 +8,7 @@ export interface UseCandidatesReturn {
   error: string | null;
 }
 
-export function useCandidates(phonemes: string[]): UseCandidatesReturn {
+export function useCandidates(phonemes: string[], transcript: string[]): UseCandidatesReturn {
   const [candidates, setCandidates] = useState<CandidateResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +24,7 @@ export function useCandidates(phonemes: string[]): UseCandidatesReturn {
     setError(null);
 
     api.candidates
-      .get(phonemes)
+      .get(phonemes, transcript)
       .then((result) => {
         setCandidates(result.candidates);
       })
@@ -34,7 +34,7 @@ export function useCandidates(phonemes: string[]): UseCandidatesReturn {
       .finally(() => {
         setIsLoading(false);
       });
-  }, [phonemes]);
+  }, [phonemes, transcript]);
 
   return { candidates, isLoading, error };
 }
