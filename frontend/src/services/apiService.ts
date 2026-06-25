@@ -1,5 +1,6 @@
 import type { FamilyResult, StrokeFeatures, SymbolResult, WeightResult } from '../types/analysis';
 import type { CandidateResponse } from '../types/candidate';
+import type { CircleResult } from '../types/circle';
 import type { PhonemeResponse } from '../types/phoneme';
 import type { SessionDetail, SessionSummary, StrokeCreatePayload } from '../types/session';
 import type { StrokePoint } from '../types/stroke';
@@ -44,6 +45,14 @@ export const api = {
 
     classifyWeight: (strokeId: string, points: StrokePoint[]): Promise<WeightResult> =>
       request('/api/classify-weight', {
+        method: 'POST',
+        body: JSON.stringify({ stroke_id: strokeId, points }),
+      }),
+  },
+
+  circle: {
+    classify: (strokeId: string, points: StrokePoint[]): Promise<CircleResult> =>
+      request('/api/classify-circle', {
         method: 'POST',
         body: JSON.stringify({ stroke_id: strokeId, points }),
       }),

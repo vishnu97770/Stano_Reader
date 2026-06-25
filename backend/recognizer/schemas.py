@@ -73,6 +73,20 @@ class SymbolResult(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# M13A — Circle and loop detection schemas
+# ---------------------------------------------------------------------------
+
+class CircleResult(BaseModel):
+    stroke_id: str
+    is_circle: bool
+    circle_type: str | None    # "SMALL_CIRCLE" | "LARGE_CIRCLE" | "SMALL_LOOP" | "LARGE_LOOP"
+    phoneme: str | None        # IPA phoneme; None when is_circle = False
+    confidence: float          # [0, 1]; 0.0 when is_circle = False
+    position: str              # "ANY" now; future: "INITIAL" | "MEDIAL" | "FINAL"
+    reasoning: str | None      # human-readable; None when is_circle = False
+
+
+# ---------------------------------------------------------------------------
 # M7 — Stroke weight (pressure) classification schemas
 # ---------------------------------------------------------------------------
 

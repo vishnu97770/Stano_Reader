@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from app.api.analysis import router as analysis_router
 from app.api.candidate import router as candidate_router
+from app.api.circle import router as circle_router
 from app.api.classify import router as classify_router
 from app.api.phoneme import router as phoneme_router
 from app.api.sessions import router as sessions_router
@@ -16,3 +17,4 @@ api_router.include_router(symbol_router)
 api_router.include_router(weight_router)
 api_router.include_router(phoneme_router)
 api_router.include_router(candidate_router)
+api_router.include_router(circle_router)
