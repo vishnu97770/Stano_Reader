@@ -1,3 +1,22 @@
+// M7 — Pressure types
+
+export interface PressureStats {
+  avg_pressure: number;
+  max_pressure: number;
+  variance: number;
+  sample_count: number;
+}
+
+export interface WeightResult {
+  stroke_id: string;
+  weight: 'LIGHT' | 'HEAVY' | 'AMBIGUOUS';
+  avg_pressure: number;
+  max_pressure: number;
+  variance: number;
+  threshold_light: number;
+  threshold_heavy: number;
+}
+
 export interface BoundingBox {
   min_x: number;
   max_x: number;
@@ -18,6 +37,7 @@ export interface StrokeFeatures {
   avg_point_distance: number;
   is_curve: boolean;
   curvature_ratio: number;
+  pressure_stats: PressureStats | null;
 }
 
 // M5 — Family classification types

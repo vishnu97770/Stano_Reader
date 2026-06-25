@@ -7,6 +7,7 @@ from pydantic import BaseModel, field_validator
 class StrokePointSchema(BaseModel):
     x: float
     y: float
+    pressure: float = 0.5   # [0, 1]; mouse default per W3C spec; absent in pre-M7 data
     timestamp: int
 
 

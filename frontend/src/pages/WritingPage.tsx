@@ -6,11 +6,13 @@ import DrawingCanvas from '../components/Canvas/DrawingCanvas';
 import type { DrawingCanvasHandle } from '../components/Canvas/DrawingCanvas';
 import AnalysisPanel from '../components/AnalysisPanel/AnalysisPanel';
 import SymbolPanel from '../components/SymbolPanel/SymbolPanel';
+import WeightPanel from '../components/WeightPanel/WeightPanel';
 import Toolbar from '../components/Toolbar/Toolbar';
 import { useSocket } from '../hooks/useSocket';
 import { useSession } from '../hooks/useSession';
 import { useStrokeAnalysis } from '../hooks/useStrokeAnalysis';
 import { useStrokeSymbol } from '../hooks/useStrokeSymbol';
+import { useStrokeWeight } from '../hooks/useStrokeWeight';
 import type { Stroke } from '../types/stroke';
 import type { StrokeCreatePayload } from '../types/session';
 
@@ -23,6 +25,7 @@ export default function WritingPage() {
   const { status, emitStroke, remoteStrokes } = useSocket(sessionId);
   const { features, isAnalyzing, error: analysisError, analyzeStroke } = useStrokeAnalysis();
   const { result: symbolResult, isClassifying, error: symbolError, classifySymbol } = useStrokeSymbol();
+  const { result: weightResult, isClassifying: isWeightClassifying, error: weightError, classifyWeight } = useStrokeWeight();
   const {
     sessions,
     activeSession,
@@ -67,8 +70,9 @@ export default function WritingPage() {
       emitStroke(stroke, penColorRef.current, penWidthRef.current);
       void analyzeStroke(stroke.id, stroke.points);
       void classifySymbol(stroke.id, stroke.points);
+      void classifyWeight(stroke.id, stroke.points);
     },
-    [emitStroke, analyzeStroke, classifySymbol],
+    [emitStroke, analyzeStroke, classifySymbol, classifyWeight],
   );
 
   // ── Session actions ───────────────────────────────────────────────────────
@@ -134,6 +138,11 @@ export default function WritingPage() {
               result={symbolResult}
               isClassifying={isClassifying}
               error={symbolError}
+            />
+            <WeightPanel
+              result={weightResult}
+              isClassifying={isWeightClassifying}
+              error={weightError}
             />
             <AnalysisPanel
               features={features}

@@ -14,6 +14,13 @@ class BoundingBox(BaseModel):
     height: float
 
 
+class PressureStats(BaseModel):
+    avg_pressure: float    # mean pressure across all sampled points, in [0, 1]
+    max_pressure: float    # peak pressure observed during the stroke
+    variance: float        # pressure variance (0 = constant, higher = variable)
+    sample_count: int      # number of points that contributed pressure data
+
+
 class StrokeFeatures(BaseModel):
     stroke_id: str
     length: float               # total path length (px)
@@ -25,6 +32,8 @@ class StrokeFeatures(BaseModel):
     avg_point_distance: float   # alias of avg_segment_length, exposed for clarity
     is_curve: bool
     curvature_ratio: float      # path_length / chord_length
+    # M7 — None when input points carry no pressure key (fallback to frequency priors)
+    pressure_stats: PressureStats | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -61,3 +70,17 @@ class SymbolResult(BaseModel):
     alternatives: list[SymbolMatch]     # other symbols above noise floor, sorted desc
     thickness_missing: bool             # True when voiced/unvoiced required pressure data
     reason: str | None                  # human-readable explanation of any limitation
+
+
+# ---------------------------------------------------------------------------
+# M7 — Stroke weight (pressure) classification schemas
+# ---------------------------------------------------------------------------
+
+class WeightResult(BaseModel):
+    stroke_id: str
+    weight: str             # "LIGHT" | "HEAVY" | "AMBIGUOUS"
+    avg_pressure: float
+    max_pressure: float
+    variance: float
+    threshold_light: float  # pressure at or below which a stroke is LIGHT
+    threshold_heavy: float  # pressure at or above which a stroke is HEAVY

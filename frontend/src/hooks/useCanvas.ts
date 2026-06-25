@@ -54,13 +54,17 @@ export function useCanvas({
     return ctx;
   }, [applyStyle]);
 
-  // Returns coordinates in CSS pixel space. The canvas context is pre-scaled
-  // by devicePixelRatio in DrawingCanvas, so CSS pixel coords are correct here.
+  // Returns coordinates and pressure in CSS pixel space.
+  // e.pressure is normalized [0, 1] by the browser:
+  //   mouse   → 0.5 when button pressed (W3C spec mandated default)
+  //   stylus  → real hardware pressure
+  //   touch   → 0.5 if device doesn't report force, otherwise real value
   const getPoint = useCallback((e: PointerEvent): StrokePoint => {
     const rect = canvasRef.current!.getBoundingClientRect();
     return {
       x: e.clientX - rect.left,
       y: e.clientY - rect.top,
+      pressure: e.pressure,
       timestamp: Date.now(),
     };
   }, []);

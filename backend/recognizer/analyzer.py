@@ -9,19 +9,20 @@ from recognizer.features import (
     compute_curve,
     compute_length,
 )
-from recognizer.schemas import BoundingBox, StrokeFeatures
+from recognizer.pressure import compute_pressure_stats
+from recognizer.schemas import BoundingBox, PressureStats, StrokeFeatures
 
 
 def analyze_stroke(stroke_id: str, points: list[dict]) -> StrokeFeatures:
     """
-    Extract geometric features from a raw stroke.
+    Extract geometric and pressure features from a raw stroke.
 
     Args:
         stroke_id: UUID of the stroke (echoed into the response).
-        points:    List of dicts with keys {x: float, y: float, timestamp: int}.
+        points:    List of dicts with keys {x, y, timestamp} and optional {pressure}.
 
     Returns:
-        StrokeFeatures with all computed values.
+        StrokeFeatures.  pressure_stats is None when no point carries pressure.
 
     Raises:
         ValueError: if points is empty.
@@ -34,6 +35,9 @@ def analyze_stroke(stroke_id: str, points: list[dict]) -> StrokeFeatures:
     bbox = compute_bounding_box(points)
     is_curve, curvature_ratio = compute_curve(points)
 
+    raw_pressure = compute_pressure_stats(points)
+    pressure_stats = PressureStats(**raw_pressure) if raw_pressure else None
+
     return StrokeFeatures(
         stroke_id=stroke_id,
         length=round(total_length, 2),
@@ -45,4 +49,5 @@ def analyze_stroke(stroke_id: str, points: list[dict]) -> StrokeFeatures:
         avg_point_distance=round(avg_segment, 2),
         is_curve=is_curve,
         curvature_ratio=curvature_ratio,
+        pressure_stats=pressure_stats,
     )
