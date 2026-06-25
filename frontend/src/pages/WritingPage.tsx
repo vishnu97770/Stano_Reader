@@ -5,11 +5,13 @@ import Workspace from '../components/Workspace/Workspace';
 import DrawingCanvas from '../components/Canvas/DrawingCanvas';
 import type { DrawingCanvasHandle } from '../components/Canvas/DrawingCanvas';
 import AnalysisPanel from '../components/AnalysisPanel/AnalysisPanel';
+import OutlinePanel from '../components/OutlinePanel/OutlinePanel';
 import SymbolPanel from '../components/SymbolPanel/SymbolPanel';
 import WeightPanel from '../components/WeightPanel/WeightPanel';
 import Toolbar from '../components/Toolbar/Toolbar';
 import { useSocket } from '../hooks/useSocket';
 import { useSession } from '../hooks/useSession';
+import { useOutline } from '../hooks/useOutline';
 import { useStrokeAnalysis } from '../hooks/useStrokeAnalysis';
 import { useStrokeSymbol } from '../hooks/useStrokeSymbol';
 import { useStrokeWeight } from '../hooks/useStrokeWeight';
@@ -26,6 +28,7 @@ export default function WritingPage() {
   const { features, isAnalyzing, error: analysisError, analyzeStroke } = useStrokeAnalysis();
   const { result: symbolResult, isClassifying, error: symbolError, classifySymbol } = useStrokeSymbol();
   const { result: weightResult, isClassifying: isWeightClassifying, error: weightError, classifyWeight } = useStrokeWeight();
+  const { outline, isRebuilding, addStroke, clearOutline, rebuildFromStrokes } = useOutline();
   const {
     sessions,
     activeSession,
@@ -60,7 +63,7 @@ export default function WritingPage() {
 
   // ── Stroke completion handler ─────────────────────────────────────────────
   const handleStrokeComplete = useCallback(
-    (stroke: Stroke) => {
+    async (stroke: Stroke) => {
       pendingStrokes.current.push({
         id: stroke.id,
         points: stroke.points,
@@ -69,10 +72,11 @@ export default function WritingPage() {
       });
       emitStroke(stroke, penColorRef.current, penWidthRef.current);
       void analyzeStroke(stroke.id, stroke.points);
-      void classifySymbol(stroke.id, stroke.points);
       void classifyWeight(stroke.id, stroke.points);
+      const symbolResult = await classifySymbol(stroke.id, stroke.points);
+      if (symbolResult) addStroke(symbolResult);
     },
-    [emitStroke, analyzeStroke, classifySymbol, classifyWeight],
+    [emitStroke, analyzeStroke, classifySymbol, classifyWeight, addStroke],
   );
 
   // ── Session actions ───────────────────────────────────────────────────────
@@ -93,20 +97,23 @@ export default function WritingPage() {
       const session = await loadSession(id);
       pendingStrokes.current = [];
       canvasRef.current?.loadStrokes(session.strokes);
+      await rebuildFromStrokes(session.strokes);
     },
-    [loadSession],
+    [loadSession, rebuildFromStrokes],
   );
 
   const handleNew = useCallback(() => {
     startNewSession();
     pendingStrokes.current = [];
     canvasRef.current?.clear();
-  }, [startNewSession]);
+    clearOutline();
+  }, [startNewSession, clearOutline]);
 
   const handleClear = useCallback(() => {
     canvasRef.current?.clear();
     pendingStrokes.current = [];
-  }, []);
+    clearOutline();
+  }, [clearOutline]);
 
   return (
     <div className="h-screen flex flex-col bg-gray-100 overflow-hidden">
@@ -134,6 +141,10 @@ export default function WritingPage() {
         }
         outputPanel={
           <div className="flex flex-col gap-3 h-full overflow-y-auto">
+            <OutlinePanel
+              outline={outline}
+              isRebuilding={isRebuilding}
+            />
             <SymbolPanel
               result={symbolResult}
               isClassifying={isClassifying}
