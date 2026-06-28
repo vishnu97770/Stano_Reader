@@ -10,6 +10,7 @@ import OutlinePanel from '../components/OutlinePanel/OutlinePanel';
 import PhonemePanel from '../components/PhonemePanel/PhonemePanel';
 import CirclePanel from '../components/CirclePanel/CirclePanel';
 import HookPanel from '../components/HookPanel/HookPanel';
+import LengthPanel from '../components/LengthPanel/LengthPanel';
 import SymbolPanel from '../components/SymbolPanel/SymbolPanel';
 import TranscriptPanel from '../components/TranscriptPanel/TranscriptPanel';
 import WeightPanel from '../components/WeightPanel/WeightPanel';
@@ -23,6 +24,7 @@ import { useStrokeAnalysis } from '../hooks/useStrokeAnalysis';
 import { useStrokeSymbol } from '../hooks/useStrokeSymbol';
 import { useStrokeCircle } from '../hooks/useStrokeCircle';
 import { useStrokeHook } from '../hooks/useStrokeHook';
+import { useStrokeLength } from '../hooks/useStrokeLength';
 import { useStrokeWeight } from '../hooks/useStrokeWeight';
 import { useTranscript } from '../hooks/useTranscript';
 import { api } from '../services/apiService';
@@ -41,6 +43,7 @@ export default function WritingPage() {
   const { result: weightResult, isClassifying: isWeightClassifying, error: weightError, classifyWeight } = useStrokeWeight();
   const { result: circleResult, isClassifying: isCircleClassifying, error: circleError, classifyCircle } = useStrokeCircle();
   const { result: hookResult, isClassifying: isHookClassifying, error: hookError, classifyHook } = useStrokeHook();
+  const { result: lengthResult, isClassifying: isLengthClassifying, error: lengthError, classifyLength } = useStrokeLength();
   const { outline, isRebuilding, addStroke, clearOutline, rebuildFromStrokes } = useOutline();
   const { phonemes, isMapping, error: phonemeError } = usePhoneme(outline);
   const { words, appendWord, undoLast, clearTranscript, setTranscript } = useTranscript();
@@ -90,10 +93,11 @@ export default function WritingPage() {
       void classifyWeight(stroke.id, stroke.points);
       void classifyCircle(stroke.id, stroke.points);
       void classifyHook(stroke.id, stroke.points);
+      void classifyLength(stroke.id, stroke.points);
       const symbolResult = await classifySymbol(stroke.id, stroke.points);
       if (symbolResult) addStroke(symbolResult);
     },
-    [emitStroke, analyzeStroke, classifySymbol, classifyWeight, classifyCircle, classifyHook, addStroke],
+    [emitStroke, analyzeStroke, classifySymbol, classifyWeight, classifyCircle, classifyHook, classifyLength, addStroke],
   );
 
   // ── Candidate selection: append word, clear outline ───────────────────────
@@ -205,6 +209,11 @@ export default function WritingPage() {
               result={hookResult}
               isClassifying={isHookClassifying}
               error={hookError}
+            />
+            <LengthPanel
+              result={lengthResult}
+              isClassifying={isLengthClassifying}
+              error={lengthError}
             />
             <WeightPanel
               result={weightResult}

@@ -101,6 +101,22 @@ class HookResult(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# M13C — Halving and doubling detection schemas
+# ---------------------------------------------------------------------------
+
+class LengthResult(BaseModel):
+    stroke_id: str
+    is_modified: bool
+    modification_type: str | None   # "HALF" | "DOUBLE"; None when is_modified = False
+    added_phoneme: str | None       # IPA phoneme appended by the modification
+    confidence: float               # [0, 1]; 0.0 when is_modified = False
+    canonical_length: float         # reference length used (px)
+    measured_length: float          # actual stroke path length (px)
+    length_ratio: float             # measured_length / canonical_length
+    reasoning: str | None           # human-readable; None when is_modified = False
+
+
+# ---------------------------------------------------------------------------
 # M7 — Stroke weight (pressure) classification schemas
 # ---------------------------------------------------------------------------
 

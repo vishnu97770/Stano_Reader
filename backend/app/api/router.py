@@ -5,6 +5,7 @@ from app.api.candidate import router as candidate_router
 from app.api.circle import router as circle_router
 from app.api.classify import router as classify_router
 from app.api.hook import router as hook_router
+from app.api.length import router as length_router
 from app.api.phoneme import router as phoneme_router
 from app.api.sessions import router as sessions_router
 from app.api.symbol import router as symbol_router
@@ -20,3 +21,4 @@ api_router.include_router(phoneme_router)
 api_router.include_router(candidate_router)
 api_router.include_router(circle_router)
 api_router.include_router(hook_router)
+api_router.include_router(length_router)
