@@ -3,6 +3,7 @@ import type { CandidateResponse } from '../types/candidate';
 import type { CircleResult } from '../types/circle';
 import type { HookResult } from '../types/hook';
 import type { LengthResult } from '../types/length';
+import type { PositionResult } from '../types/position';
 import type { PhonemeResponse } from '../types/phoneme';
 import type { SessionDetail, SessionSummary, StrokeCreatePayload } from '../types/session';
 import type { StrokePoint } from '../types/stroke';
@@ -73,6 +74,14 @@ export const api = {
       request('/api/classify-length', {
         method: 'POST',
         body: JSON.stringify({ stroke_id: strokeId, points, family_name: familyName ?? null }),
+      }),
+  },
+
+  position: {
+    classify: (strokeId: string, points: StrokePoint[], canvasHeight: number): Promise<PositionResult> =>
+      request('/api/classify-position', {
+        method: 'POST',
+        body: JSON.stringify({ stroke_id: strokeId, points, canvas_height: canvasHeight }),
       }),
   },
 

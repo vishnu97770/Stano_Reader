@@ -117,6 +117,20 @@ class LengthResult(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# M13D — Writing position detection schemas
+# ---------------------------------------------------------------------------
+
+class PositionResult(BaseModel):
+    stroke_id: str
+    position: str           # "FIRST" | "SECOND" | "THIRD" | "UNKNOWN"
+    confidence: float       # [0, 1]; 0.0 when position = "UNKNOWN"
+    centroid_y: float       # mean Y of all stroke points (canvas px)
+    normalized_y: float     # centroid_y / canvas_height → [0, 1]
+    canvas_height: float    # canvas height supplied by the client (px)
+    reasoning: str          # human-readable explanation (always present)
+
+
+# ---------------------------------------------------------------------------
 # M7 — Stroke weight (pressure) classification schemas
 # ---------------------------------------------------------------------------
 

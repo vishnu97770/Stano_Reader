@@ -8,22 +8,25 @@ import type { Stroke } from '../../types/stroke';
 import type { StrokeRecord } from '../../types/session';
 import { useCanvas } from '../../hooks/useCanvas';
 import CanvasOverlay from './CanvasOverlay';
+import PositionGuides from './PositionGuides';
 
 interface DrawingCanvasProps {
   penColor: string;
   penWidth: number;
   remoteStrokeCount: number;
   onStrokeComplete: (stroke: Stroke) => void;
+  showPositionGuides?: boolean;
 }
 
 export interface DrawingCanvasHandle {
   clear: () => void;
   drawRemoteStroke: (stroke: Stroke, penColor: string, penWidth: number) => void;
   loadStrokes: (strokes: StrokeRecord[]) => void;
+  getCanvasHeight: () => number;
 }
 
 const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(
-  ({ penColor, penWidth, remoteStrokeCount, onStrokeComplete }, ref) => {
+  ({ penColor, penWidth, remoteStrokeCount, onStrokeComplete, showPositionGuides = false }, ref) => {
     const {
       canvasRef,
       strokes,
@@ -37,8 +40,13 @@ const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(
 
     useImperativeHandle(
       ref,
-      () => ({ clear: clearCanvas, drawRemoteStroke, loadStrokes }),
-      [clearCanvas, drawRemoteStroke, loadStrokes],
+      () => ({
+        clear: clearCanvas,
+        drawRemoteStroke,
+        loadStrokes,
+        getCanvasHeight: () => canvasRef.current?.getBoundingClientRect().height ?? 0,
+      }),
+      [clearCanvas, drawRemoteStroke, loadStrokes, canvasRef],
     );
 
     // Size the canvas buffer to match CSS size × devicePixelRatio for sharp rendering.
@@ -93,6 +101,7 @@ const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(
           className="w-full h-full cursor-crosshair"
           style={{ touchAction: 'none' }}
         />
+        <PositionGuides show={showPositionGuides} />
         <CanvasOverlay localCount={strokes.length} remoteCount={remoteStrokeCount} />
       </div>
     );

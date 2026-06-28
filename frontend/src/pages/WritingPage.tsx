@@ -11,6 +11,7 @@ import PhonemePanel from '../components/PhonemePanel/PhonemePanel';
 import CirclePanel from '../components/CirclePanel/CirclePanel';
 import HookPanel from '../components/HookPanel/HookPanel';
 import LengthPanel from '../components/LengthPanel/LengthPanel';
+import PositionPanel from '../components/PositionPanel/PositionPanel';
 import SymbolPanel from '../components/SymbolPanel/SymbolPanel';
 import TranscriptPanel from '../components/TranscriptPanel/TranscriptPanel';
 import WeightPanel from '../components/WeightPanel/WeightPanel';
@@ -25,6 +26,7 @@ import { useStrokeSymbol } from '../hooks/useStrokeSymbol';
 import { useStrokeCircle } from '../hooks/useStrokeCircle';
 import { useStrokeHook } from '../hooks/useStrokeHook';
 import { useStrokeLength } from '../hooks/useStrokeLength';
+import { useStrokePosition } from '../hooks/useStrokePosition';
 import { useStrokeWeight } from '../hooks/useStrokeWeight';
 import { useTranscript } from '../hooks/useTranscript';
 import { api } from '../services/apiService';
@@ -35,6 +37,7 @@ export default function WritingPage() {
   const [sessionId] = useState<string>(() => crypto.randomUUID());
   const [penColor, setPenColor] = useState('#1a1a1a');
   const [penWidth, setPenWidth] = useState(2.5);
+  const [showPositionGuides, setShowPositionGuides] = useState(false);
 
   const canvasRef = useRef<DrawingCanvasHandle>(null);
   const { status, emitStroke, remoteStrokes } = useSocket(sessionId);
@@ -44,6 +47,7 @@ export default function WritingPage() {
   const { result: circleResult, isClassifying: isCircleClassifying, error: circleError, classifyCircle } = useStrokeCircle();
   const { result: hookResult, isClassifying: isHookClassifying, error: hookError, classifyHook } = useStrokeHook();
   const { result: lengthResult, isClassifying: isLengthClassifying, error: lengthError, classifyLength } = useStrokeLength();
+  const { result: positionResult, isClassifying: isPositionClassifying, error: positionError, classifyPosition } = useStrokePosition();
   const { outline, isRebuilding, addStroke, clearOutline, rebuildFromStrokes } = useOutline();
   const { phonemes, isMapping, error: phonemeError } = usePhoneme(outline);
   const { words, appendWord, undoLast, clearTranscript, setTranscript } = useTranscript();
@@ -94,10 +98,11 @@ export default function WritingPage() {
       void classifyCircle(stroke.id, stroke.points);
       void classifyHook(stroke.id, stroke.points);
       void classifyLength(stroke.id, stroke.points);
+      void classifyPosition(stroke.id, stroke.points, canvasRef.current?.getCanvasHeight() ?? 600);
       const symbolResult = await classifySymbol(stroke.id, stroke.points);
       if (symbolResult) addStroke(symbolResult);
     },
-    [emitStroke, analyzeStroke, classifySymbol, classifyWeight, classifyCircle, classifyHook, classifyLength, addStroke],
+    [emitStroke, analyzeStroke, classifySymbol, classifyWeight, classifyCircle, classifyHook, classifyLength, classifyPosition, addStroke],
   );
 
   // ── Candidate selection: append word, clear outline ───────────────────────
@@ -171,6 +176,7 @@ export default function WritingPage() {
             penWidth={penWidth}
             remoteStrokeCount={remoteStrokes.length}
             onStrokeComplete={handleStrokeComplete}
+            showPositionGuides={showPositionGuides}
           />
         }
         outputPanel={
@@ -214,6 +220,13 @@ export default function WritingPage() {
               result={lengthResult}
               isClassifying={isLengthClassifying}
               error={lengthError}
+            />
+            <PositionPanel
+              result={positionResult}
+              isClassifying={isPositionClassifying}
+              error={positionError}
+              showGuides={showPositionGuides}
+              onToggleGuides={() => setShowPositionGuides((v) => !v)}
             />
             <WeightPanel
               result={weightResult}
