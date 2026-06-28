@@ -98,7 +98,9 @@ function boostByVowels(
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function WritingPage() {
+type Route = 'write' | 'upload';
+
+export default function WritingPage({ onNavigate }: { onNavigate?: (r: Route) => void } = {}) {
   const [sessionId] = useState<string>(() => crypto.randomUUID());
   const [penColor, setPenColor] = useState('#1a1a1a');
   const [penWidth, setPenWidth] = useState(2.5);
@@ -322,7 +324,7 @@ export default function WritingPage() {
 
   return (
     <div className="h-screen flex flex-col bg-gray-100 overflow-hidden">
-      <Header connectionStatus={status} />
+      <Header connectionStatus={status} route="write" onNavigate={onNavigate} />
 
       <SessionBar
         activeSession={activeSession}

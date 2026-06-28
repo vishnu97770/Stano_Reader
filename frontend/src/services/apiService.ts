@@ -2,6 +2,7 @@ import type { FamilyResult, StrokeFeatures, SymbolResult, WeightResult } from '.
 import type { CandidateResponse } from '../types/candidate';
 import type { CircleResult } from '../types/circle';
 import type { HookResult } from '../types/hook';
+import type { ExtractedStroke, ImageProcessResult, ImageUploadResult } from '../types/image';
 import type { LengthResult } from '../types/length';
 import type { PhraseResult } from '../types/phrase';
 import type { PositionResult } from '../types/position';
@@ -100,6 +101,29 @@ export const api = {
       request('/api/detect-vowel', {
         method: 'POST',
         body: JSON.stringify({ stroke_id: strokeId, points, nearby_strokes: nearbyStrokes }),
+      }),
+  },
+
+  image: {
+    upload: async (file: File): Promise<ImageUploadResult> => {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch(`${BASE_URL}/api/upload-image`, { method: 'POST', body: form });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`API ${res.status}: ${text}`);
+      }
+      return res.json() as Promise<ImageUploadResult>;
+    },
+
+    process: (
+      strokes: ExtractedStroke[],
+      canvasHeight: number,
+      canvasWidth: number,
+    ): Promise<ImageProcessResult> =>
+      request('/api/process-image', {
+        method: 'POST',
+        body: JSON.stringify({ strokes, canvas_height: canvasHeight, canvas_width: canvasWidth }),
       }),
   },
 

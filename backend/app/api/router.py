@@ -6,6 +6,7 @@ from app.api.circle import router as circle_router
 from app.api.classify import router as classify_router
 from app.api.hook import router as hook_router
 from app.api.length import router as length_router
+from app.api.image import router as image_router
 from app.api.phrase import router as phrase_router
 from app.api.position import router as position_router
 from app.api.vowel import router as vowel_router
@@ -25,6 +26,7 @@ api_router.include_router(candidate_router)
 api_router.include_router(circle_router)
 api_router.include_router(hook_router)
 api_router.include_router(length_router)
+api_router.include_router(image_router)
 api_router.include_router(phrase_router)
 api_router.include_router(position_router)
 api_router.include_router(vowel_router)

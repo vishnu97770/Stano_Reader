@@ -201,6 +201,66 @@ class VowelResult(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# M16 — Image upload and processing schemas
+# ---------------------------------------------------------------------------
+
+class ExtractedStrokePoint(BaseModel):
+    x: float
+    y: float
+    pressure: float = 0.5   # always 0.5 for image-extracted strokes (no stylus data)
+    timestamp: int = 0
+
+
+class ExtractedStroke(BaseModel):
+    id: str
+    points: list[ExtractedStrokePoint]
+
+
+class WritingZone(BaseModel):
+    top: float      # y-coordinate of first inked row in the zone
+    bottom: float   # y-coordinate of last inked row
+    baseline: float # estimated baseline y
+
+
+class PageMetadata(BaseModel):
+    canvas_width: float     # normalised canvas width (= image_processor.TARGET_WIDTH)
+    canvas_height: float    # normalised canvas height; passed to detect_position
+    writing_zones: list[WritingZone]
+    line_count: int
+    image_width: int        # actual width of preprocessed image in pixels
+    image_height: int       # actual height of preprocessed image in pixels
+
+
+class ImageUploadResult(BaseModel):
+    strokes: list[ExtractedStroke]
+    stroke_count: int
+    page_metadata: PageMetadata
+
+
+class ImageStrokeResult(BaseModel):
+    """Recognition results for a single image-extracted stroke."""
+    stroke_id: str
+    symbol: str
+    family: str
+    confidence: float
+    circle_is_circle: bool
+    hook_is_hook: bool
+    length_is_modified: bool
+    position: str
+    weight: str
+
+
+class ImageProcessResult(BaseModel):
+    """Full recognition pipeline results for an uploaded image."""
+    stroke_results: list[ImageStrokeResult]
+    phonemes: list[str]
+    candidates: list[dict]   # [{"word": str, "confidence": float}]
+    phrase_text: str | None
+    phrase_confidence: float
+    transcript: list[str]    # top-1 candidate per word (empty until user selects)
+
+
+# ---------------------------------------------------------------------------
 # M13D — Writing position detection schemas
 # ---------------------------------------------------------------------------
 
