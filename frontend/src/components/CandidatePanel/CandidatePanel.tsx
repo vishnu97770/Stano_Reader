@@ -41,6 +41,19 @@ export default function CandidatePanel({ candidates, isLoading, error, onSelect 
           <p className="text-xs text-red-500">{error}</p>
         )}
 
+        {!error && candidates.length === 0 && isLoading && (
+          <div className="space-y-2 animate-pulse" aria-label="Loading candidates">
+            {[72, 56, 44].map((w) => (
+              <div key={w} className="flex items-center gap-3 px-2 py-1.5">
+                <div className="h-2 w-3 bg-gray-200 rounded" />
+                <div className={`h-3 bg-gray-200 rounded`} style={{ width: `${w}%` }} />
+                <div className="flex-1 h-1.5 bg-gray-100 rounded-full" />
+                <div className="h-2 w-7 bg-gray-200 rounded" />
+              </div>
+            ))}
+          </div>
+        )}
+
         {!error && candidates.length === 0 && !isLoading && (
           <p className="text-xs text-gray-400">Candidates appear as you draw.</p>
         )}

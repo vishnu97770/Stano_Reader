@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Header from '../components/Header/Header';
+import OfflineBanner from '../components/OfflineBanner/OfflineBanner';
 import SessionBar from '../components/SessionBar/SessionBar';
 import Workspace from '../components/Workspace/Workspace';
 import DrawingCanvas from '../components/Canvas/DrawingCanvas';
@@ -163,6 +164,9 @@ export default function WritingPage({ onNavigate }: { onNavigate?: (r: Route) =>
   useEffect(() => { penColorRef.current = penColor; }, [penColor]);
   useEffect(() => { penWidthRef.current = penWidth; }, [penWidth]);
 
+  // Debounce: minimum 16ms between recognition calls (60fps cap).
+  const lastRecognitionTimeRef = useRef(0);
+
   // Ref-track outline and candidates so the stroke callback always sees the
   // latest values without being recreated on every state change.
   const outlineRef = useRef(outline);
@@ -208,6 +212,10 @@ export default function WritingPage({ onNavigate }: { onNavigate?: (r: Route) =>
   // ── Stroke completion handler ─────────────────────────────────────────────
   const handleStrokeComplete = useCallback(
     async (stroke: Stroke) => {
+      const now = performance.now();
+      if (now - lastRecognitionTimeRef.current < 16) return;
+      lastRecognitionTimeRef.current = now;
+
       // Build nearby consonant descriptors from the current outline's geometry.
       const nearbyStrokes: NearbyStrokeInfo[] = outlineRef.current.recognizedStrokes
         .map((rs) => {
@@ -403,6 +411,7 @@ export default function WritingPage({ onNavigate }: { onNavigate?: (r: Route) =>
   return (
     <div className="h-screen flex flex-col bg-gray-100 overflow-hidden">
       <Header connectionStatus={status} route="write" onNavigate={onNavigate} />
+      <OfflineBanner />
 
       <SessionBar
         activeSession={activeSession}

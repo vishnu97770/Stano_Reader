@@ -1,269 +1,163 @@
-# Stano_Reader
+# Stano Reader
 
-## Overview
+Offline, AI-free, deterministic Pitman shorthand recognition platform.
 
-Stano_Reader is an AI-powered stenography recognition platform that converts handwritten shorthand (stenography) into readable English text.
-
-The goal of the project is to bridge the gap between traditional shorthand writing and modern digital workflows by enabling users to write stenography directly on a phone, tablet, or digital writing surface and receive real-time English transcription.
-
-Instead of relying on image uploads and OCR, Stano_Reader captures raw pen strokes, making recognition more accurate and opening the door to real-time translation.
+Draw shorthand strokes in a browser — receive word candidates in real time. No cloud, no API keys, no ML models. Everything runs locally.
 
 ---
 
-## Problem Statement
+## Quickstart (Docker)
 
-Stenographers, court reporters, students, and shorthand professionals still rely heavily on manual transcription workflows.
-
-Current workflow:
-
-Listen → Write Stenography → Read Notes Again → Manually Type English Text
-
-Challenges:
-
-* Manual transcription is time-consuming.
-* Shorthand notes are difficult to read later.
-* Existing OCR systems do not effectively recognize stenography.
-* Students receive no real-time feedback while learning shorthand.
-* There are very few modern AI-powered tools for shorthand recognition.
-
----
-
-## Solution
-
-Stano_Reader provides a digital platform where users can:
-
-* Write stenography directly in a browser.
-* Capture pen strokes in real time.
-* Process shorthand symbols through an AI recognition pipeline.
-* Convert shorthand into readable English text.
-* Export the generated text into standard document formats.
-
-Future versions will support multiple shorthand systems and additional languages.
-
----
-
-## Key Features
-
-### Phase 1 (MVP)
-
-* Browser-based stenography writing area
-* Real-time stroke capture
-* Phone-to-browser writing support
-* Live stroke rendering
-* Stroke data storage
-
-### Phase 2
-
-* Symbol recognition engine
-* Shorthand-to-English conversion
-* Word segmentation
-* Export to TXT
-
-### Phase 3
-
-* AI-powered recognition
-* DOCX and PDF export
-* User accounts
-* Training mode for students
-
-### Future Vision
-
-* Real-time stenography translation
-* Mobile application
-* Multi-language support
-* Pitman shorthand support
-* Gregg shorthand support
-* Learning and correction system
-* Voice-to-steno assistance
-* Cloud synchronization
-
----
-
-## How It Works
-
-### Traditional Workflow
-
-```text
-Audio
- ↓
-Write Steno
- ↓
-Read Notes
- ↓
-Type English
+```bash
+git clone https://github.com/vishnu97770/Stano_Reader.git
+cd Stano_Reader
+cp .env.example .env
+docker compose up
 ```
 
-### Stano_Reader Workflow
+Open [http://localhost](http://localhost) in your browser.
 
-```text
-Write Steno
-      ↓
-Capture Pen Strokes
-      ↓
-Recognition Engine
-      ↓
-English Translation
-      ↓
-TXT / DOCX Export
+**Optional — AI re-ranking (M17):** install [Ollama](https://ollama.ai), pull a model, and set `OLLAMA_URL` in `.env`. The app falls back silently when Ollama is unavailable.
+
+```bash
+ollama pull llama3.2:1b
 ```
 
 ---
 
-## System Architecture
+## Development (without Docker)
 
-```text
-Phone / Tablet
-        ↓
-React Canvas
-        ↓
-WebSocket Communication
-        ↓
-FastAPI Backend
-        ↓
-Recognition Engine
-        ↓
-English Text Output
+```bash
+# Backend
+cd backend
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+
+# Frontend (new terminal)
+cd frontend
+npm install
+npm run dev
 ```
 
----
-
-## Technology Stack
-
-### Frontend
-
-* React
-* Vite
-* HTML5 Canvas
-* Tailwind CSS
-* Socket.IO Client
-
-### Backend
-
-* FastAPI
-* Python
-* WebSockets
-
-### Database
-
-* SQLite (MVP)
-* PostgreSQL (Future)
-
-### AI & Machine Learning
-
-* PyTorch
-* Custom Stroke Recognition Models
-* Online Handwriting Recognition
-
-### Version Control
-
-* Git
-* GitHub
+Frontend: [http://localhost:5173](http://localhost:5173) · Backend: [http://localhost:8000](http://localhost:8000)
 
 ---
 
-## Project Structure
+## Recognition pipeline
 
-```text
+```
+Draw stroke on canvas
+      │
+      ▼
+Vowel detector  ──────────────────────────────────────┐
+      │ (consonant path only)                         │ (vowel mark)
+      ▼                                               │
+Symbol classifier (HORIZONTAL / VERTICAL / CURVE …)  │
+      │                                               │
+      ▼                                               │
+Outline builder (stroke sequence → phoneme outline)  │
+      │                                               │
+      ▼                                               │
+Phoneme mapper (outline → IPA sequence)              │
+      │                                               │
+      ▼                                               │
+Candidate engine (IPA → word list with confidence)   │
+      │                                               │
+      ▼                                               │
+Context engine (transcript history → re-rank)        │◄──┘
+      │
+      ▼ (optional — M17)
+AI re-ranker (Ollama local LLM — non-blocking)
+      │
+      ▼
+Word Candidates panel
+```
+
+Auxiliary detectors run in parallel for each stroke:
+
+| Detector | Endpoint | Purpose |
+|---|---|---|
+| Weight | `/api/classify-weight` | Light / normal / heavy |
+| Circle | `/api/classify-circle` | S / SES / circle-S detection |
+| Hook | `/api/classify-hook` | Initial / final hook type |
+| Length | `/api/classify-length` | Short / normal / long |
+| Position | `/api/classify-position` | Line of writing position |
+| Phrase | `/api/detect-phrase` | Phraseography match |
+
+---
+
+## Project structure
+
+```
 Stano_Reader/
-
-├── frontend/
-│   ├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-│
 ├── backend/
 │   ├── app/
-│   ├── recognizer/
-│   ├── websocket/
-│   └── database/
-│
-├── data/
-│   └── stroke_samples/
-│
-├── models/
-│
-└── docs/
+│   │   ├── api/          REST endpoints (one file per detector)
+│   │   ├── schemas/      Pydantic request schemas
+│   │   ├── socket/       Socket.IO server + events
+│   │   ├── cache.py      LRU response cache (thread-safe, TTL 5min)
+│   │   ├── config.py     Environment settings
+│   │   ├── database.py   SQLAlchemy + SQLite
+│   │   └── main.py       FastAPI app + health endpoints
+│   ├── recognizer/       All detection / classification logic
+│   └── tests/            pytest suite (292+ tests)
+├── frontend/
+│   ├── src/
+│   │   ├── components/   Pure UI components
+│   │   ├── hooks/        State and side-effect hooks
+│   │   ├── pages/        WritingPage, UploadPage
+│   │   ├── services/     API + Socket.IO clients
+│   │   └── types/        TypeScript contracts
+│   └── package.json
+├── docker/
+│   └── nginx.conf        Nginx reverse-proxy config
+├── docs/
+│   ├── API.md            All endpoints M1–M17
+│   ├── ARCHITECTURE.md   Pipeline diagrams + module docs
+│   └── CONTRIBUTING.md   Dev setup, adding detectors, PR process
+├── Dockerfile.backend
+├── Dockerfile.frontend
+├── docker-compose.yml     Production
+└── docker-compose.dev.yml Hot-reload development
 ```
 
 ---
 
-## Development Roadmap
+## Health endpoints
 
-### Milestone 1
-
-Create a browser-based writing canvas.
-
-Goal:
-
-* User can draw on the screen.
-* Strokes are captured correctly.
-
-### Milestone 2
-
-Implement real-time communication.
-
-Goal:
-
-* Phone acts as a writing pad.
-* Laptop receives strokes instantly.
-
-### Milestone 3
-
-Store stroke data.
-
-Goal:
-
-* Save shorthand stroke sequences.
-* Create a dataset for future training.
-
-### Milestone 4
-
-Build a basic recognition engine.
-
-Goal:
-
-* Detect shorthand symbols.
-* Map symbols to English words.
-
-### Milestone 5
-
-Generate English output.
-
-Goal:
-
-* Convert shorthand notes into readable text.
-
-### Milestone 6
-
-Export functionality.
-
-Goal:
-
-* Save generated text as TXT, DOCX, and PDF.
+| Endpoint | Response | Use |
+|---|---|---|
+| `GET /health` | `{status, version, uptime_seconds}` | Always 200 |
+| `GET /ready` | `{ready, database, details}` | 200 ok / 503 unavailable |
 
 ---
 
-## Target Users
+## Milestone history
 
-* Government stenographers
-* Court reporters
-* Secretaries
-* Journalism professionals
-* Stenography students
-* Competitive exam aspirants
-* Training institutes
+| Milestone | Description |
+|---|---|
+| M1 | Browser canvas, stroke capture, Socket.IO |
+| M2 | Session persistence (SQLite) |
+| M3 | Symbol classification (HORIZONTAL, VERTICAL, CURVE, DOT, CIRCLE) |
+| M4 | Stroke weight classifier |
+| M5 | Circle / S-circle detector |
+| M6 | Hook detector |
+| M7 | Length classifier |
+| M8 | Outline builder |
+| M9 | Phoneme mapper |
+| M10 | Candidate engine |
+| M11 | Context engine (transcript re-ranking) |
+| M12 | Position classifier |
+| M13 | Vowel sign detector |
+| M14 | Schema audit + API hardening |
+| M15 | Vowel attachment + vowel-boosted candidates |
+| M16 | Image upload and stroke extraction |
+| M17 | Local LLM re-ranking (Ollama, non-blocking) |
+| M18 | Production release — Docker, CI/CD, caching, docs |
 
 ---
 
-## Long-Term Vision
+## License
 
-Stano_Reader aims to become a complete AI-powered stenography ecosystem that enables real-time shorthand recognition, digital note management, language translation, and learning assistance for stenographers worldwide.
-
----
-
-## Status
-
-🚧 Currently in early development (MVP Planning Stage)
-
-The first objective is to create a browser-based writing system capable of capturing shorthand strokes and streaming them in real time for future recognition and translation.
+[MIT](LICENSE)
