@@ -87,6 +87,20 @@ class CircleResult(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# M13B — Hook detection schemas
+# ---------------------------------------------------------------------------
+
+class HookResult(BaseModel):
+    stroke_id: str
+    is_hook: bool
+    hook_type: str | None   # "L_HOOK_INITIAL" | "R_HOOK_INITIAL" | "N_HOOK_FINAL" | "FV_HOOK_FINAL"
+    position: str | None    # "INITIAL" | "FINAL"; None when is_hook = False
+    phoneme: str | None     # IPA phoneme; None when is_hook = False
+    confidence: float       # [0, 1]; 0.0 when is_hook = False
+    reasoning: str | None   # human-readable; None when is_hook = False
+
+
+# ---------------------------------------------------------------------------
 # M7 — Stroke weight (pressure) classification schemas
 # ---------------------------------------------------------------------------
 
