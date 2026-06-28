@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Header from '../components/Header/Header';
 import SessionBar from '../components/SessionBar/SessionBar';
 import Workspace from '../components/Workspace/Workspace';
@@ -11,6 +11,7 @@ import PhonemePanel from '../components/PhonemePanel/PhonemePanel';
 import CirclePanel from '../components/CirclePanel/CirclePanel';
 import HookPanel from '../components/HookPanel/HookPanel';
 import LengthPanel from '../components/LengthPanel/LengthPanel';
+import PhrasePanel from '../components/PhrasePanel/PhrasePanel';
 import PositionPanel from '../components/PositionPanel/PositionPanel';
 import SymbolPanel from '../components/SymbolPanel/SymbolPanel';
 import TranscriptPanel from '../components/TranscriptPanel/TranscriptPanel';
@@ -26,6 +27,7 @@ import { useStrokeSymbol } from '../hooks/useStrokeSymbol';
 import { useStrokeCircle } from '../hooks/useStrokeCircle';
 import { useStrokeHook } from '../hooks/useStrokeHook';
 import { useStrokeLength } from '../hooks/useStrokeLength';
+import { usePhraseDetection } from '../hooks/usePhraseDetection';
 import { useStrokePosition } from '../hooks/useStrokePosition';
 import { useStrokeWeight } from '../hooks/useStrokeWeight';
 import { useTranscript } from '../hooks/useTranscript';
@@ -48,6 +50,7 @@ export default function WritingPage() {
   const { result: hookResult, isClassifying: isHookClassifying, error: hookError, classifyHook } = useStrokeHook();
   const { result: lengthResult, isClassifying: isLengthClassifying, error: lengthError, classifyLength } = useStrokeLength();
   const { result: positionResult, isClassifying: isPositionClassifying, error: positionError, classifyPosition } = useStrokePosition();
+  const { result: phraseResult, isDetecting: isPhraseDetecting, error: phraseError, detectPhrase, clearPhrase } = usePhraseDetection();
   const { outline, isRebuilding, addStroke, clearOutline, rebuildFromStrokes } = useOutline();
   const { phonemes, isMapping, error: phonemeError } = usePhoneme(outline);
   const { words, appendWord, undoLast, clearTranscript, setTranscript } = useTranscript();
@@ -69,6 +72,13 @@ export default function WritingPage() {
   const penWidthRef = useRef(penWidth);
   useEffect(() => { penColorRef.current = penColor; }, [penColor]);
   useEffect(() => { penWidthRef.current = penWidth; }, [penWidth]);
+
+  // Ref-track outline and candidates so the stroke callback always sees the
+  // latest values without being recreated on every state change.
+  const outlineRef = useRef(outline);
+  const candidatesRef = useRef(candidates);
+  useEffect(() => { outlineRef.current = outline; }, [outline]);
+  useEffect(() => { candidatesRef.current = candidates; }, [candidates]);
 
   // Accumulates strokes drawn since the last Save (or Load / New).
   const pendingStrokes = useRef<StrokeCreatePayload[]>([]);
@@ -101,17 +111,44 @@ export default function WritingPage() {
       void classifyPosition(stroke.id, stroke.points, canvasRef.current?.getCanvasHeight() ?? 600);
       const symbolResult = await classifySymbol(stroke.id, stroke.points);
       if (symbolResult) addStroke(symbolResult);
+
+      // Compute projected outline families including the just-added stroke
+      // (state update from addStroke is async; use refs for current values).
+      const prevFamilies = outlineRef.current.recognizedStrokes.map((s) => s.family);
+      const newFamilies =
+        symbolResult && symbolResult.symbol !== 'UNKNOWN'
+          ? [...prevFamilies, symbolResult.family]
+          : prevFamilies;
+      void detectPhrase(stroke.id, newFamilies, candidatesRef.current.map((c) => c.word));
     },
-    [emitStroke, analyzeStroke, classifySymbol, classifyWeight, classifyCircle, classifyHook, classifyLength, classifyPosition, addStroke],
+    [emitStroke, analyzeStroke, classifySymbol, classifyWeight, classifyCircle, classifyHook, classifyLength, classifyPosition, addStroke, detectPhrase],
   );
+
+  // ── Inject phrase as top candidate when a phrase is detected ─────────────
+  const displayCandidates = useMemo(() => {
+    if (phraseResult?.is_phrase && phraseResult.phrase_text) {
+      return [
+        {
+          word: `[PHRASE] ${phraseResult.phrase_text}`,
+          confidence: phraseResult.confidence,
+          reasoning: 'Phraseography match',
+        },
+        ...candidates,
+      ];
+    }
+    return candidates;
+  }, [phraseResult, candidates]);
 
   // ── Candidate selection: append word, clear outline ───────────────────────
   const handleSelectCandidate = useCallback(
     (word: string) => {
-      appendWord(word);
+      // Strip [PHRASE] prefix before adding to transcript
+      const transcriptWord = word.startsWith('[PHRASE] ') ? word.slice(9) : word;
+      appendWord(transcriptWord);
       clearOutline();
+      clearPhrase();
     },
-    [appendWord, clearOutline],
+    [appendWord, clearOutline, clearPhrase],
   );
 
   // ── Session actions ───────────────────────────────────────────────────────
@@ -146,13 +183,15 @@ export default function WritingPage() {
     canvasRef.current?.clear();
     clearOutline();
     clearTranscript();
-  }, [startNewSession, clearOutline, clearTranscript]);
+    clearPhrase();
+  }, [startNewSession, clearOutline, clearTranscript, clearPhrase]);
 
   const handleClear = useCallback(() => {
     canvasRef.current?.clear();
     pendingStrokes.current = [];
     clearOutline();
-  }, [clearOutline]);
+    clearPhrase();
+  }, [clearOutline, clearPhrase]);
 
   return (
     <div className="h-screen flex flex-col bg-gray-100 overflow-hidden">
@@ -191,10 +230,15 @@ export default function WritingPage() {
               error={phonemeError}
             />
             <CandidatePanel
-              candidates={candidates}
+              candidates={displayCandidates}
               isLoading={isCandidateLoading}
               error={candidateError}
               onSelect={handleSelectCandidate}
+            />
+            <PhrasePanel
+              result={phraseResult}
+              isDetecting={isPhraseDetecting}
+              error={phraseError}
             />
             <TranscriptPanel
               words={words}

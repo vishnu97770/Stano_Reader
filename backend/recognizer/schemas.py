@@ -165,6 +165,24 @@ class LengthResult(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# M15 — Phraseography detection schemas
+# ---------------------------------------------------------------------------
+
+class PhraseMatch(BaseModel):
+    phrase_text: str    # alternative phrase that also matched the outline
+    confidence: float   # [0, 1]
+
+
+class PhraseResult(BaseModel):
+    stroke_id: str
+    is_phrase: bool
+    phrase_text: str | None             # matched phrase; None when is_phrase=False
+    confidence: float                   # [0, 1]; 0.0 when is_phrase=False
+    alternatives: list[PhraseMatch] = [] # other phrases that matched the same outline
+    reasoning: str = ""                 # always populated
+
+
+# ---------------------------------------------------------------------------
 # M13D — Writing position detection schemas
 # ---------------------------------------------------------------------------
 
