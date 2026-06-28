@@ -62,9 +62,9 @@ export default function HookPanel({ result, isClassifying, error }: HookPanelPro
                 <span className="text-sm font-semibold text-gray-900">
                   {result.hook_type ? hookLabel(result.hook_type) : '—'}
                 </span>
-                {result.position && (
-                  <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${positionBadge(result.position)}`}>
-                    {result.position.toLowerCase()}
+                {result.attachment_position && (
+                  <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${positionBadge(result.attachment_position)}`}>
+                    {result.attachment_position.toLowerCase()}
                   </span>
                 )}
               </div>

@@ -128,7 +128,7 @@ class CircleResult(BaseModel):
     circle_type: str | None    # "SMALL_CIRCLE" | "LARGE_CIRCLE" | "SMALL_LOOP" | "LARGE_LOOP"
     phoneme: str | None        # IPA phoneme; None when is_circle = False
     confidence: float          # [0, 1]; 0.0 when is_circle = False
-    position: str              # "ANY" now; future: "INITIAL" | "MEDIAL" | "FINAL"
+    word_position: str         # "ANY" now; future: "INITIAL" | "MEDIAL" | "FINAL"
     reasoning: _ReasoningStr = ""  # M14 — "" when is_circle = False (was: str | None)
 
 
@@ -139,10 +139,10 @@ class CircleResult(BaseModel):
 class HookResult(BaseModel):
     stroke_id: str
     is_hook: bool
-    hook_type: str | None   # "L_HOOK_INITIAL" | "R_HOOK_INITIAL" | "N_HOOK_FINAL" | "FV_HOOK_FINAL"
-    position: str | None    # "INITIAL" | "FINAL"; None when is_hook = False
-    phoneme: str | None     # IPA phoneme; None when is_hook = False
-    confidence: float       # [0, 1]; 0.0 when is_hook = False
+    hook_type: str | None         # "L_HOOK_INITIAL" | "R_HOOK_INITIAL" | "N_HOOK_FINAL" | "FV_HOOK_FINAL"
+    attachment_position: str | None  # "INITIAL" | "FINAL"; None when is_hook = False
+    phoneme: str | None           # IPA phoneme; None when is_hook = False
+    confidence: float             # [0, 1]; 0.0 when is_hook = False
     reasoning: _ReasoningStr = ""  # M14 — "" when is_hook = False (was: str | None)
 
 

@@ -82,7 +82,7 @@ def _not_circle(stroke_id: str) -> CircleResult:
         circle_type=None,
         phoneme=None,
         confidence=0.0,
-        position="ANY",
+        word_position="ANY",
         reasoning=None,
     )
 
@@ -200,6 +200,6 @@ def detect_circle(
         circle_type=circle_type,
         phoneme=defn.phoneme,
         confidence=confidence,
-        position=defn.position,
+        word_position=defn.position,
         reasoning=reasoning,
     )
