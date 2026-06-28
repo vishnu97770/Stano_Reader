@@ -275,11 +275,12 @@ def test_double_result_has_reasoning():
     assert len(result.reasoning) > 0
 
 
-def test_normal_result_reasoning_is_none():
-    """Normal strokes must have reasoning=None."""
+def test_normal_result_reasoning_is_empty():
+    """Normal strokes must have reasoning='' (M14: reasoning is str, never None)."""
     features = make_features("rr3", length=GLOBAL_CANONICAL_PX)
     result = detect_length("rr3", features)
-    assert result.reasoning is None
+    assert isinstance(result.reasoning, str)
+    assert result.reasoning == ""
 
 
 def test_confidence_zero_for_normal():

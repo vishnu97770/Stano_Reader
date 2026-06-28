@@ -1,4 +1,19 @@
-from pydantic import BaseModel
+from typing import Annotated
+
+from pydantic import BaseModel, model_validator
+from pydantic.functional_validators import BeforeValidator
+
+
+# ---------------------------------------------------------------------------
+# Shared coercion — used by M13A/B/C result types whose detector code
+# passes reasoning=None on the "not detected" path.  Converts None → ""
+# so all result types expose reasoning: str with no nulls anywhere.
+# ---------------------------------------------------------------------------
+
+def _coerce_none_to_empty(v: object) -> str:
+    return v if isinstance(v, str) else ("" if v is None else str(v))
+
+_ReasoningStr = Annotated[str, BeforeValidator(_coerce_none_to_empty)]
 
 
 # ---------------------------------------------------------------------------
@@ -50,6 +65,7 @@ class FamilyResult(BaseModel):
     family: str                         # best-matching family, or "UNKNOWN"
     confidence: float                   # score of the best match
     alternatives: list[FamilyMatch]     # other families above noise floor, sorted desc
+    reasoning: str = ""                 # M14 — human-readable explanation; "" when UNKNOWN
 
 
 # ---------------------------------------------------------------------------
@@ -69,7 +85,36 @@ class SymbolResult(BaseModel):
     confidence: float                   # symbol-level confidence
     alternatives: list[SymbolMatch]     # other symbols above noise floor, sorted desc
     thickness_missing: bool             # True when voiced/unvoiced required pressure data
-    reason: str | None                  # human-readable explanation of any limitation
+    reasoning: str = ""                 # M14 — renamed from "reason"; "" when unavailable
+
+    @model_validator(mode="before")
+    @classmethod
+    def _migrate_reason_field(cls, data: object) -> object:
+        # symbol_classifier.py still passes reason= (old name); map it here
+        # so the detector file needs no change.
+        if isinstance(data, dict):
+            data = dict(data)
+            if "reason" in data and "reasoning" not in data:
+                data["reasoning"] = data.pop("reason") or ""
+            if data.get("reasoning") is None:
+                data["reasoning"] = ""
+        return data
+
+
+# ---------------------------------------------------------------------------
+# M7 — Stroke weight (pressure) classification schemas
+# ---------------------------------------------------------------------------
+
+class WeightResult(BaseModel):
+    stroke_id: str
+    weight: str             # "LIGHT" | "HEAVY" | "AMBIGUOUS"
+    avg_pressure: float
+    max_pressure: float
+    variance: float
+    threshold_light: float  # pressure at or below which a stroke is LIGHT
+    threshold_heavy: float  # pressure at or above which a stroke is HEAVY
+    confidence: float = 0.0 # M14 — confidence in the weight classification; 0.0 = not computed
+    reasoning: str = ""     # M14 — human-readable explanation; "" until weight engine sets it
 
 
 # ---------------------------------------------------------------------------
@@ -83,7 +128,7 @@ class CircleResult(BaseModel):
     phoneme: str | None        # IPA phoneme; None when is_circle = False
     confidence: float          # [0, 1]; 0.0 when is_circle = False
     position: str              # "ANY" now; future: "INITIAL" | "MEDIAL" | "FINAL"
-    reasoning: str | None      # human-readable; None when is_circle = False
+    reasoning: _ReasoningStr = ""  # M14 — "" when is_circle = False (was: str | None)
 
 
 # ---------------------------------------------------------------------------
@@ -97,7 +142,7 @@ class HookResult(BaseModel):
     position: str | None    # "INITIAL" | "FINAL"; None when is_hook = False
     phoneme: str | None     # IPA phoneme; None when is_hook = False
     confidence: float       # [0, 1]; 0.0 when is_hook = False
-    reasoning: str | None   # human-readable; None when is_hook = False
+    reasoning: _ReasoningStr = ""  # M14 — "" when is_hook = False (was: str | None)
 
 
 # ---------------------------------------------------------------------------
@@ -113,7 +158,7 @@ class LengthResult(BaseModel):
     canonical_length: float         # reference length used (px)
     measured_length: float          # actual stroke path length (px)
     length_ratio: float             # measured_length / canonical_length
-    reasoning: str | None           # human-readable; None when is_modified = False
+    reasoning: _ReasoningStr = ""   # M14 — "" when is_modified = False (was: str | None)
 
 
 # ---------------------------------------------------------------------------
@@ -127,18 +172,4 @@ class PositionResult(BaseModel):
     centroid_y: float       # mean Y of all stroke points (canvas px)
     normalized_y: float     # centroid_y / canvas_height → [0, 1]
     canvas_height: float    # canvas height supplied by the client (px)
-    reasoning: str          # human-readable explanation (always present)
-
-
-# ---------------------------------------------------------------------------
-# M7 — Stroke weight (pressure) classification schemas
-# ---------------------------------------------------------------------------
-
-class WeightResult(BaseModel):
-    stroke_id: str
-    weight: str             # "LIGHT" | "HEAVY" | "AMBIGUOUS"
-    avg_pressure: float
-    max_pressure: float
-    variance: float
-    threshold_light: float  # pressure at or below which a stroke is LIGHT
-    threshold_heavy: float  # pressure at or above which a stroke is HEAVY
+    reasoning: str = ""     # human-readable explanation; always populated by detector
