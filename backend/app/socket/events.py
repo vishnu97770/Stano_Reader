@@ -1,6 +1,24 @@
 import socketio
 
 
+# ── Singleton reference to the Socket.IO server ──────────────────────────────
+# Set once in main.py after create_socket_server() returns.
+# Background tasks in ai.py call get_sio() to emit candidates_refined events.
+
+_sio_instance: socketio.AsyncServer | None = None
+
+
+def set_sio(server: socketio.AsyncServer) -> None:
+    """Store the application-level Socket.IO server for use by background tasks."""
+    global _sio_instance
+    _sio_instance = server
+
+
+def get_sio() -> socketio.AsyncServer | None:
+    """Return the stored Socket.IO server, or None if not yet initialised."""
+    return _sio_instance
+
+
 def create_socket_server() -> socketio.AsyncServer:
     sio = socketio.AsyncServer(
         async_mode="asgi",

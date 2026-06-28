@@ -3,9 +3,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.socket.events import create_socket_server
+from app.socket.events import create_socket_server, set_sio
 from app.database import engine, Base, run_migrations
 from app.api.router import api_router
+from recognizer.ai_context_engine import configure as configure_ai
 
 # Import models so Base.metadata is populated before create_all
 import app.models  # noqa: F401
@@ -14,6 +15,8 @@ Base.metadata.create_all(bind=engine)
 run_migrations()
 
 sio = create_socket_server()
+set_sio(sio)
+configure_ai(url=settings.ollama_url, model=settings.ollama_model, timeout=settings.ollama_timeout)
 
 fastapi_app = FastAPI(
     title="Stano Reader API",

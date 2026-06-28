@@ -3,10 +3,17 @@ Context Engine — re-ranks candidates using transcript history.
 
 Public interface
 ────────────────
-    apply_context(transcript, candidates) -> list[ContextCandidateResult]
+    apply_context(transcript, candidates, ai_result=None) -> list[ContextCandidateResult]
 
-This is a pure function: same inputs always produce the same outputs.
-The current implementation is deterministic and rule-based.
+The core logic is purely deterministic and rule-based.  An optional
+``ai_result`` parameter allows the caller to layer AI re-ranking on top
+of the rule-based result without changing the existing call sites.
+
+When ``ai_result`` is supplied and ``not ai_result.fallback_used``:
+  1.  Rule-based boosting is applied first (unchanged behaviour).
+  2.  The AI ranking is then used to re-sort, preserving all candidates
+      (AI is additive — it never removes entries).
+  3.  The AI-promoted candidate receives a reasoning prefix "✦ AI: …".
 
 Future AI compatibility
 ───────────────────────
@@ -19,10 +26,13 @@ require no changes.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
 from recognizer.candidate_engine import CandidateResult
 from recognizer.context_rules import CONTEXT_RULES
+
+if TYPE_CHECKING:
+    from recognizer.schemas import AIRefinementResult
 
 _BOOST_CAP = 0.99
 
@@ -57,16 +67,15 @@ def _last_trigger(transcript: list[str]) -> str | None:
 def apply_context(
     transcript: list[str],
     candidates: list[CandidateResult],
+    ai_result: "AIRefinementResult | None" = None,
 ) -> list[ContextCandidateResult]:
     """
-    Re-rank candidates using the last word of the transcript as a context signal.
+    Re-rank candidates using the last transcript word and optionally AI output.
 
-    1. Look up the last transcript word in CONTEXT_RULES.
-    2. For each candidate, add the rule's boost (if any), cap at 0.99.
-    3. Re-sort by boosted confidence descending, then alphabetically.
+    Step 1 (always): rule-based boosting via CONTEXT_RULES.
+    Step 2 (optional): AI re-ranking when ai_result is provided and valid.
 
-    When transcript is empty or no rule matches, candidates are returned in
-    their original order with reasoning=None.
+    AI is additive — candidates are never removed, only reordered.
     """
     trigger = _last_trigger(transcript)
     rule: dict[str, float] = CONTEXT_RULES.get(trigger, {}) if trigger else {}
@@ -83,4 +92,25 @@ def apply_context(
         results.append(ContextCandidateResult(word=c.word, confidence=boosted, reasoning=reasoning))
 
     results.sort(key=lambda r: (-r.confidence, r.word))
+
+    # ── Optional AI re-ranking ────────────────────────────────────────────────
+    if (
+        ai_result is not None
+        and not ai_result.fallback_used
+        and ai_result.refined_ranking
+    ):
+        rank_map = {w: i for i, w in enumerate(ai_result.refined_ranking)}
+        results.sort(
+            key=lambda r: (rank_map.get(r.word, len(results)), -r.confidence, r.word)
+        )
+        # Tag the AI-promoted candidate (rank 0 in refined but not in original)
+        if ai_result.promoted_candidate:
+            for r in results:
+                if r.word == ai_result.promoted_candidate:
+                    ai_note = f"❆ AI: {ai_result.reasoning}" if ai_result.reasoning else "❆ AI promoted"
+                    r.reasoning = (
+                        f"{ai_note} | {r.reasoning}" if r.reasoning else ai_note
+                    )
+                    break
+
     return results

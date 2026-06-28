@@ -17,6 +17,10 @@ export function getSocket(): AppSocket {
   return socket;
 }
 
+export function getSocketId(): string | undefined {
+  return socket?.id;
+}
+
 export function disconnectSocket(): void {
   socket?.disconnect();
   socket = null;

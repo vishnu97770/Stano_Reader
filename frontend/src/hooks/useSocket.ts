@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
-import { getSocket, disconnectSocket } from '../services/socketService';
+import { getSocket, disconnectSocket, getSocketId } from '../services/socketService';
 import type { ConnectionStatus, StrokePayload } from '../types/socket';
 import type { Stroke } from '../types/stroke';
 
 export function useSocket(sessionId: string) {
   const [status, setStatus] = useState<ConnectionStatus>('disconnected');
+  const [socketId, setSocketId] = useState<string | undefined>(undefined);
   const [remoteStrokes, setRemoteStrokes] = useState<StrokePayload[]>([]);
 
   useEffect(() => {
@@ -12,7 +13,7 @@ export function useSocket(sessionId: string) {
     setStatus('connecting');
     socket.connect();
 
-    socket.on('connect', () => setStatus('connected'));
+    socket.on('connect', () => { setStatus('connected'); setSocketId(getSocketId()); });
     socket.on('disconnect', () => setStatus('disconnected'));
     socket.on('connect_error', () => setStatus('disconnected'));
 
@@ -41,5 +42,5 @@ export function useSocket(sessionId: string) {
     [sessionId],
   );
 
-  return { status, emitStroke, remoteStrokes };
+  return { status, socketId, emitStroke, remoteStrokes };
 }

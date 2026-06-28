@@ -80,12 +80,18 @@ export default function CandidatePanel({ candidates, isLoading, error, onSelect 
                     </span>
                   </div>
 
-                  {/* Reasoning row (only when a context rule fired) */}
+                  {/* Reasoning row (context rule or AI promotion) */}
                   {c.reasoning && (
                     <div className="flex items-center gap-1 pl-7">
-                      <span className="text-[10px] text-emerald-600 font-medium leading-none">
-                        {c.reasoning}
-                      </span>
+                      {c.reasoning.startsWith('✦') ? (
+                        <span className="text-[10px] text-indigo-500 font-semibold leading-none">
+                          {c.reasoning}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-emerald-600 font-medium leading-none">
+                          {c.reasoning}
+                        </span>
+                      )}
                     </div>
                   )}
                 </button>

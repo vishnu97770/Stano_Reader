@@ -1,3 +1,4 @@
+import type { AIRefinementRequest, AIRefinementResult } from '../types/ai';
 import type { FamilyResult, StrokeFeatures, SymbolResult, WeightResult } from '../types/analysis';
 import type { CandidateResponse } from '../types/candidate';
 import type { CircleResult } from '../types/circle';
@@ -28,6 +29,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  ai: {
+    refine: (body: AIRefinementRequest): Promise<AIRefinementResult> =>
+      request('/api/refine-candidates', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }),
+  },
+
   analysis: {
     analyzeStroke: (strokeId: string, points: StrokePoint[]): Promise<StrokeFeatures> =>
       request('/api/analyze-stroke', {

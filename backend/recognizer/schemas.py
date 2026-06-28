@@ -261,6 +261,39 @@ class ImageProcessResult(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# M17 — AI-assisted candidate refinement schemas
+# ---------------------------------------------------------------------------
+
+class AIRefinementResult(BaseModel):
+    """
+    Result of one AI refinement pass.  Follows the M14 standard fields.
+
+    was_invoked:         True when the AI call was attempted (even if it fell back).
+    promoted_candidate:  Word moved to rank 1 by AI; None when original rank unchanged
+                         or when fallback_used=True.
+    confidence_boost:    Confidence delta added to the promoted candidate (0.10 fixed).
+    reasoning:           Primary LLM reasoning for the top-ranked word; "" on fallback.
+    original_ranking:    Candidate words in their original deterministic order.
+    refined_ranking:     Candidate words in AI-refined order; == original on fallback.
+    fallback_used:       True when AI failed, timed out, or was skipped by rules.
+    detected:            M14 standard; True only when was_invoked=True and not fallback.
+    confidence:          M14 standard; confidence of the top refined candidate.
+    alternatives:        M14 standard placeholder.
+    """
+    stroke_id: str
+    was_invoked: bool
+    promoted_candidate: str | None
+    confidence_boost: float
+    reasoning: str = ""
+    original_ranking: list[str]
+    refined_ranking: list[str]
+    fallback_used: bool
+    detected: bool = False
+    confidence: float = 0.0
+    alternatives: list = []
+
+
+# ---------------------------------------------------------------------------
 # M13D — Writing position detection schemas
 # ---------------------------------------------------------------------------
 
