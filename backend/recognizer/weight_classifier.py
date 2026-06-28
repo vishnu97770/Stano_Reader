@@ -112,6 +112,7 @@ def classify_weight(stroke_id: str, points: list[dict]) -> WeightResult:
             variance=0.0,
             threshold_light=LIGHT_THRESHOLD,
             threshold_heavy=HEAVY_THRESHOLD,
+            detected=False,
             confidence=0.0,
             reasoning=_weight_reasoning(0.5, _AMBIGUOUS, has_pressure=False),
         )

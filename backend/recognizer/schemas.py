@@ -113,6 +113,7 @@ class WeightResult(BaseModel):
     variance: float
     threshold_light: float  # pressure at or below which a stroke is LIGHT
     threshold_heavy: float  # pressure at or above which a stroke is HEAVY
+    detected: bool = True   # M14 — False when no pressure data; True for all real classifications
     confidence: float = 0.0 # M14 — confidence in the weight classification; 0.0 = not computed
     reasoning: str = ""     # M14 — human-readable explanation; "" until weight engine sets it
 
