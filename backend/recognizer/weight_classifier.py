@@ -130,3 +130,7 @@ def classify_weight(stroke_id: str, points: list[dict]) -> WeightResult:
         confidence=_weight_confidence(avg, weight),
         reasoning=_weight_reasoning(avg, weight, has_pressure=True),
     )
+
+
+# M14 I-9 — standardized detect_ prefix alias
+detect_weight = classify_weight

@@ -95,3 +95,7 @@ def classify_symbol_from_points(stroke_id: str, points: list[dict]) -> SymbolRes
     features = analyze_stroke(stroke_id, points)
     family_result = classify_stroke(features)
     return classify_symbol(features, family_result)
+
+
+# M14 I-9 — standardized detect_ prefix alias
+detect_symbol = classify_symbol

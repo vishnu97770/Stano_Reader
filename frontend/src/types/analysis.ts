@@ -34,7 +34,6 @@ export interface StrokeFeatures {
   angle: number;
   bounding_box: BoundingBox;
   point_count: number;
-  avg_point_distance: number;
   is_curve: boolean;
   curvature_ratio: number;
   pressure_stats: PressureStats | null;

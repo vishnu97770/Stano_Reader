@@ -123,3 +123,7 @@ def classify_from_points(stroke_id: str, points: list[dict]) -> FamilyResult:
     """
     features = analyze_stroke(stroke_id, points)
     return classify_stroke(features)
+
+
+# M14 I-9 — standardized detect_ prefix alias
+detect_family = classify_stroke

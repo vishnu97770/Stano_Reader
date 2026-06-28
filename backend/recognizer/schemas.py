@@ -44,7 +44,6 @@ class StrokeFeatures(BaseModel):
     angle: float                # start-to-end angle in degrees, [0, 360)
     bounding_box: BoundingBox
     point_count: int
-    avg_point_distance: float   # alias of avg_segment_length, exposed for clarity
     is_curve: bool
     curvature_ratio: float      # path_length / chord_length
     # M7 — None when input points carry no pressure key (fallback to frequency priors)
@@ -128,6 +127,7 @@ class CircleResult(BaseModel):
     circle_type: str | None    # "SMALL_CIRCLE" | "LARGE_CIRCLE" | "SMALL_LOOP" | "LARGE_LOOP"
     phoneme: str | None        # IPA phoneme; None when is_circle = False
     confidence: float          # [0, 1]; 0.0 when is_circle = False
+    alternatives: list = []    # M14 — placeholder; future: ranked alternative circle types
     word_position: str         # "ANY" now; future: "INITIAL" | "MEDIAL" | "FINAL"
     reasoning: _ReasoningStr = ""  # M14 — "" when is_circle = False (was: str | None)
 
@@ -143,6 +143,7 @@ class HookResult(BaseModel):
     attachment_position: str | None  # "INITIAL" | "FINAL"; None when is_hook = False
     phoneme: str | None           # IPA phoneme; None when is_hook = False
     confidence: float             # [0, 1]; 0.0 when is_hook = False
+    alternatives: list = []       # M14 — placeholder; future: ranked alternative hook types
     reasoning: _ReasoningStr = ""  # M14 — "" when is_hook = False (was: str | None)
 
 
@@ -156,6 +157,7 @@ class LengthResult(BaseModel):
     modification_type: str | None   # "HALF" | "DOUBLE"; None when is_modified = False
     added_phoneme: str | None       # IPA phoneme appended by the modification
     confidence: float               # [0, 1]; 0.0 when is_modified = False
+    alternatives: list = []         # M14 — placeholder; future: ranked alternative modifications
     canonical_length: float         # reference length used (px)
     measured_length: float          # actual stroke path length (px)
     length_ratio: float             # measured_length / canonical_length
@@ -170,6 +172,7 @@ class PositionResult(BaseModel):
     stroke_id: str
     position: str           # "FIRST" | "SECOND" | "THIRD" | "UNKNOWN"
     confidence: float       # [0, 1]; 0.0 when position = "UNKNOWN"
+    alternatives: list = [] # M14 — placeholder; future: ranked alternative positions
     centroid_y: float       # mean Y of all stroke points (canvas px)
     normalized_y: float     # centroid_y / canvas_height → [0, 1]
     canvas_height: float    # canvas height supplied by the client (px)

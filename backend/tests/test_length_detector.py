@@ -53,7 +53,6 @@ def make_features(
             width=20.0, height=length,
         ),
         point_count=11,
-        avg_point_distance=length / 10,
         is_curve=curvature_ratio >= 1.5,
         curvature_ratio=curvature_ratio,
         pressure_stats=None,

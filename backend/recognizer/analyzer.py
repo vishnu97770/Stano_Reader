@@ -46,8 +46,11 @@ def analyze_stroke(stroke_id: str, points: list[dict]) -> StrokeFeatures:
         angle=angle,
         bounding_box=BoundingBox(**bbox),
         point_count=len(points),
-        avg_point_distance=round(avg_segment, 2),
         is_curve=is_curve,
         curvature_ratio=curvature_ratio,
         pressure_stats=pressure_stats,
     )
+
+
+# M14 I-9 — standardized detect_ prefix alias
+detect_stroke = analyze_stroke
