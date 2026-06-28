@@ -183,6 +183,24 @@ class PhraseResult(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# M15.5 — Vowel sign detection schemas
+# ---------------------------------------------------------------------------
+
+class VowelResult(BaseModel):
+    stroke_id: str
+    is_vowel: bool
+    vowel_symbol: str | None         # e.g. "DOT2_BEFORE"; None when is_vowel=False
+    ipa: str | None                  # IPA phoneme string; None when is_vowel=False
+    degree: int | None               # 1, 2, or 3; None when is_vowel=False
+    position: str | None             # "before" | "after"; None when is_vowel=False
+    attached_to_stroke_id: str | None  # consonant stroke this vowel attaches to
+    detected: bool = False           # M14 standard; True only when is_vowel=True
+    confidence: float = 0.0          # [0, 1]; 0.0 when is_vowel=False
+    reasoning: str = ""              # always populated by detector
+    alternatives: list = []          # M14 standard placeholder
+
+
+# ---------------------------------------------------------------------------
 # M13D — Writing position detection schemas
 # ---------------------------------------------------------------------------
 

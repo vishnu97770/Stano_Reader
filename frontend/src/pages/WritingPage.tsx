@@ -15,6 +15,7 @@ import PhrasePanel from '../components/PhrasePanel/PhrasePanel';
 import PositionPanel from '../components/PositionPanel/PositionPanel';
 import SymbolPanel from '../components/SymbolPanel/SymbolPanel';
 import TranscriptPanel from '../components/TranscriptPanel/TranscriptPanel';
+import VowelPanel from '../components/VowelPanel/VowelPanel';
 import WeightPanel from '../components/WeightPanel/WeightPanel';
 import Toolbar from '../components/Toolbar/Toolbar';
 import { useSocket } from '../hooks/useSocket';
@@ -29,11 +30,73 @@ import { useStrokeHook } from '../hooks/useStrokeHook';
 import { useStrokeLength } from '../hooks/useStrokeLength';
 import { usePhraseDetection } from '../hooks/usePhraseDetection';
 import { useStrokePosition } from '../hooks/useStrokePosition';
+import { useStrokeVowel } from '../hooks/useStrokeVowel';
 import { useStrokeWeight } from '../hooks/useStrokeWeight';
 import { useTranscript } from '../hooks/useTranscript';
 import { api } from '../services/apiService';
 import type { Stroke } from '../types/stroke';
 import type { StrokeCreatePayload } from '../types/session';
+import type { NearbyStrokeInfo, StrokeGeometry, VowelAttachment } from '../types/vowel';
+import type { CandidateResult } from '../types/candidate';
+
+// ── Pure helpers (no React dependency) ───────────────────────────────────────
+
+function computeGeometry(points: { x: number; y: number }[]): StrokeGeometry {
+  const xs = points.map((p) => p.x);
+  const ys = points.map((p) => p.y);
+  const n = points.length;
+  return {
+    centroid_x: xs.reduce((a, b) => a + b, 0) / n,
+    centroid_y: ys.reduce((a, b) => a + b, 0) / n,
+    start_x: xs[0],
+    start_y: ys[0],
+    end_x: xs[n - 1],
+    end_y: ys[n - 1],
+  };
+}
+
+function computeCentroid(points: { x: number; y: number }[]): { x: number; y: number } {
+  const n = points.length;
+  return {
+    x: points.reduce((a, p) => a + p.x, 0) / n,
+    y: points.reduce((a, p) => a + p.y, 0) / n,
+  };
+}
+
+// IPA vowel → English letter patterns; used for client-side candidate boosting.
+const IPA_TO_CHARS: Record<string, string[]> = {
+  '/æ/':  ['a'],
+  '/eɪ/': ['a', 'ai', 'ay'],
+  '/ɑː/': ['a', 'ar'],
+  '/ɛ/':  ['e', 'ea'],
+  '/ɪ/':  ['i'],
+  '/iː/': ['ee', 'ie', 'ea', 'e'],
+  '/ʌ/':  ['u', 'o'],
+  '/ɜː/': ['er', 'ur', 'ir', 'ear'],
+  '/ɒ/':  ['o'],
+  '/oʊ/': ['o', 'oa', 'ow'],
+  '/ʊ/':  ['oo', 'u'],
+  '/uː/': ['oo', 'u', 'ue'],
+};
+
+function boostByVowels(
+  candidates: CandidateResult[],
+  vowelSignals: { ipa: string }[],
+): CandidateResult[] {
+  if (!vowelSignals.length || !candidates.length) return candidates;
+  const boosted = candidates.map((c) => {
+    let boost = 0;
+    const word = c.word.toLowerCase();
+    for (const sig of vowelSignals) {
+      const chars = IPA_TO_CHARS[sig.ipa] ?? [];
+      if (chars.some((ch) => word.includes(ch))) boost += 0.05;
+    }
+    return { ...c, confidence: Math.min(1, Math.round((c.confidence + boost) * 10000) / 10000) };
+  });
+  return boosted.sort((a, b) => b.confidence - a.confidence || a.word.localeCompare(b.word));
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function WritingPage() {
   const [sessionId] = useState<string>(() => crypto.randomUUID());
@@ -51,6 +114,7 @@ export default function WritingPage() {
   const { result: lengthResult, isClassifying: isLengthClassifying, error: lengthError, classifyLength } = useStrokeLength();
   const { result: positionResult, isClassifying: isPositionClassifying, error: positionError, classifyPosition } = useStrokePosition();
   const { result: phraseResult, isDetecting: isPhraseDetecting, error: phraseError, detectPhrase, clearPhrase } = usePhraseDetection();
+  const { result: vowelResult, isDetecting: isVowelDetecting, error: vowelError, detectVowel, clearVowel } = useStrokeVowel();
   const { outline, isRebuilding, addStroke, clearOutline, rebuildFromStrokes } = useOutline();
   const { phonemes, isMapping, error: phonemeError } = usePhoneme(outline);
   const { words, appendWord, undoLast, clearTranscript, setTranscript } = useTranscript();
@@ -65,6 +129,13 @@ export default function WritingPage() {
     loadSession,
     startNewSession,
   } = useSession();
+
+  // M15.5 — vowel state
+  const [vowelAttachments, setVowelAttachments] = useState<Map<string, VowelAttachment[]>>(new Map());
+  const [vowelHighlights, setVowelHighlights] = useState<{ x: number; y: number }[]>([]);
+
+  // Maps strokeId → geometry for nearby-stroke lookup in vowel detection
+  const strokeGeometryRef = useRef<Map<string, StrokeGeometry>>(new Map());
 
   // Ref-track pen values so stroke callbacks always capture the current setting
   // without needing to re-create the callback on every color/width change.
@@ -96,6 +167,43 @@ export default function WritingPage() {
   // ── Stroke completion handler ─────────────────────────────────────────────
   const handleStrokeComplete = useCallback(
     async (stroke: Stroke) => {
+      // Build nearby consonant descriptors from the current outline's geometry.
+      const nearbyStrokes: NearbyStrokeInfo[] = outlineRef.current.recognizedStrokes
+        .map((rs) => {
+          const geo = strokeGeometryRef.current.get(rs.strokeId);
+          if (!geo) return null;
+          return { stroke_id: rs.strokeId, family: rs.family, ...geo };
+        })
+        .filter((x): x is NearbyStrokeInfo => x !== null);
+
+      // Vowel detection runs first on every stroke (fast: size check only).
+      const vowelRes = await detectVowel(stroke.id, stroke.points, nearbyStrokes);
+
+      if (vowelRes?.is_vowel) {
+        // This stroke is a vowel mark — track its attachment and highlight.
+        if (vowelRes.attached_to_stroke_id && vowelRes.ipa) {
+          const consonantId = vowelRes.attached_to_stroke_id;
+          setVowelAttachments((prev) => {
+            const next = new Map(prev);
+            const existing = next.get(consonantId) ?? [];
+            next.set(consonantId, [
+              ...existing,
+              {
+                vowelStrokeId: stroke.id,
+                ipa: vowelRes.ipa!,
+                degree: vowelRes.degree ?? 2,
+                position: (vowelRes.position ?? 'after') as 'before' | 'after',
+              },
+            ]);
+            return next;
+          });
+        }
+        const centroid = computeCentroid(stroke.points);
+        setVowelHighlights((prev) => [...prev, centroid]);
+        return; // Do not classify vowel marks as consonant strokes
+      }
+
+      // ── Consonant path ────────────────────────────────────────────────────
       pendingStrokes.current.push({
         id: stroke.id,
         points: stroke.points,
@@ -109,23 +217,32 @@ export default function WritingPage() {
       void classifyHook(stroke.id, stroke.points);
       void classifyLength(stroke.id, stroke.points);
       void classifyPosition(stroke.id, stroke.points, canvasRef.current?.getCanvasHeight() ?? 600);
-      const symbolResult = await classifySymbol(stroke.id, stroke.points);
-      if (symbolResult) addStroke(symbolResult);
+      const symResult = await classifySymbol(stroke.id, stroke.points);
+      if (symResult) {
+        addStroke(symResult);
+        // Store geometry for future vowel attachment lookups.
+        strokeGeometryRef.current.set(stroke.id, computeGeometry(stroke.points));
+      }
 
       // Compute projected outline families including the just-added stroke
       // (state update from addStroke is async; use refs for current values).
       const prevFamilies = outlineRef.current.recognizedStrokes.map((s) => s.family);
       const newFamilies =
-        symbolResult && symbolResult.symbol !== 'UNKNOWN'
-          ? [...prevFamilies, symbolResult.family]
+        symResult && symResult.symbol !== 'UNKNOWN'
+          ? [...prevFamilies, symResult.family]
           : prevFamilies;
       void detectPhrase(stroke.id, newFamilies, candidatesRef.current.map((c) => c.word));
     },
-    [emitStroke, analyzeStroke, classifySymbol, classifyWeight, classifyCircle, classifyHook, classifyLength, classifyPosition, addStroke, detectPhrase],
+    [emitStroke, analyzeStroke, classifySymbol, classifyWeight, classifyCircle, classifyHook, classifyLength, classifyPosition, addStroke, detectPhrase, detectVowel],
   );
 
-  // ── Inject phrase as top candidate when a phrase is detected ─────────────
+  // ── Candidate display: vowel boosting + phrase injection ──────────────────
   const displayCandidates = useMemo(() => {
+    const vowelSignals = Array.from(vowelAttachments.values())
+      .flat()
+      .map((va) => ({ ipa: va.ipa }));
+    const boosted = boostByVowels(candidates, vowelSignals);
+
     if (phraseResult?.is_phrase && phraseResult.phrase_text) {
       return [
         {
@@ -133,22 +250,30 @@ export default function WritingPage() {
           confidence: phraseResult.confidence,
           reasoning: 'Phraseography match',
         },
-        ...candidates,
+        ...boosted,
       ];
     }
-    return candidates;
-  }, [phraseResult, candidates]);
+    return boosted;
+  }, [phraseResult, candidates, vowelAttachments]);
+
+  // ── Vowel state reset ─────────────────────────────────────────────────────
+  const clearVowelState = useCallback(() => {
+    clearVowel();
+    setVowelAttachments(new Map());
+    setVowelHighlights([]);
+    strokeGeometryRef.current.clear();
+  }, [clearVowel]);
 
   // ── Candidate selection: append word, clear outline ───────────────────────
   const handleSelectCandidate = useCallback(
     (word: string) => {
-      // Strip [PHRASE] prefix before adding to transcript
       const transcriptWord = word.startsWith('[PHRASE] ') ? word.slice(9) : word;
       appendWord(transcriptWord);
       clearOutline();
       clearPhrase();
+      clearVowelState();
     },
-    [appendWord, clearOutline, clearPhrase],
+    [appendWord, clearOutline, clearPhrase, clearVowelState],
   );
 
   // ── Session actions ───────────────────────────────────────────────────────
@@ -184,14 +309,16 @@ export default function WritingPage() {
     clearOutline();
     clearTranscript();
     clearPhrase();
-  }, [startNewSession, clearOutline, clearTranscript, clearPhrase]);
+    clearVowelState();
+  }, [startNewSession, clearOutline, clearTranscript, clearPhrase, clearVowelState]);
 
   const handleClear = useCallback(() => {
     canvasRef.current?.clear();
     pendingStrokes.current = [];
     clearOutline();
     clearPhrase();
-  }, [clearOutline, clearPhrase]);
+    clearVowelState();
+  }, [clearOutline, clearPhrase, clearVowelState]);
 
   return (
     <div className="h-screen flex flex-col bg-gray-100 overflow-hidden">
@@ -216,6 +343,7 @@ export default function WritingPage() {
             remoteStrokeCount={remoteStrokes.length}
             onStrokeComplete={handleStrokeComplete}
             showPositionGuides={showPositionGuides}
+            vowelHighlights={vowelHighlights}
           />
         }
         outputPanel={
@@ -239,6 +367,12 @@ export default function WritingPage() {
               result={phraseResult}
               isDetecting={isPhraseDetecting}
               error={phraseError}
+            />
+            <VowelPanel
+              result={vowelResult}
+              isDetecting={isVowelDetecting}
+              error={vowelError}
+              attachments={vowelAttachments}
             />
             <TranscriptPanel
               words={words}

@@ -9,6 +9,7 @@ import type { StrokeRecord } from '../../types/session';
 import { useCanvas } from '../../hooks/useCanvas';
 import CanvasOverlay from './CanvasOverlay';
 import PositionGuides from './PositionGuides';
+import VowelHighlightOverlay from './VowelHighlightOverlay';
 
 interface DrawingCanvasProps {
   penColor: string;
@@ -16,6 +17,7 @@ interface DrawingCanvasProps {
   remoteStrokeCount: number;
   onStrokeComplete: (stroke: Stroke) => void;
   showPositionGuides?: boolean;
+  vowelHighlights?: { x: number; y: number }[];
 }
 
 export interface DrawingCanvasHandle {
@@ -26,7 +28,7 @@ export interface DrawingCanvasHandle {
 }
 
 const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(
-  ({ penColor, penWidth, remoteStrokeCount, onStrokeComplete, showPositionGuides = false }, ref) => {
+  ({ penColor, penWidth, remoteStrokeCount, onStrokeComplete, showPositionGuides = false, vowelHighlights = [] }, ref) => {
     const {
       canvasRef,
       strokes,
@@ -102,6 +104,7 @@ const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(
           style={{ touchAction: 'none' }}
         />
         <PositionGuides show={showPositionGuides} />
+        <VowelHighlightOverlay highlights={vowelHighlights} />
         <CanvasOverlay localCount={strokes.length} remoteCount={remoteStrokeCount} />
       </div>
     );

@@ -8,5 +8,10 @@ router = APIRouter(prefix="/api", tags=["phoneme"])
 
 @router.post("/phonemes", response_model=PhonemeResponse)
 def map_phonemes(body: PhonemeRequest) -> PhonemeResponse:
-    phonemes = map_symbols_to_phonemes(body.symbols)
+    inserts = (
+        [{"after_index": vi.after_index, "ipa": vi.ipa} for vi in body.vowel_inserts]
+        if body.vowel_inserts
+        else None
+    )
+    phonemes = map_symbols_to_phonemes(body.symbols, inserts)
     return PhonemeResponse(phonemes=phonemes)

@@ -9,6 +9,7 @@ import type { PhonemeResponse } from '../types/phoneme';
 import type { SessionDetail, SessionSummary, StrokeCreatePayload } from '../types/session';
 import type { StrokePoint } from '../types/stroke';
 import type { TranscriptSaveResponse } from '../types/transcript';
+import type { NearbyStrokeInfo, VowelResult } from '../types/vowel';
 
 const BASE_URL =
   (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8000';
@@ -91,6 +92,14 @@ export const api = {
       request('/api/detect-phrase', {
         method: 'POST',
         body: JSON.stringify({ stroke_id: strokeId, outline_families: outlineFamilies, candidates }),
+      }),
+  },
+
+  vowel: {
+    detect: (strokeId: string, points: StrokePoint[], nearbyStrokes: NearbyStrokeInfo[]): Promise<VowelResult> =>
+      request('/api/detect-vowel', {
+        method: 'POST',
+        body: JSON.stringify({ stroke_id: strokeId, points, nearby_strokes: nearbyStrokes }),
       }),
   },
 

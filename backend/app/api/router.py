@@ -8,6 +8,7 @@ from app.api.hook import router as hook_router
 from app.api.length import router as length_router
 from app.api.phrase import router as phrase_router
 from app.api.position import router as position_router
+from app.api.vowel import router as vowel_router
 from app.api.phoneme import router as phoneme_router
 from app.api.sessions import router as sessions_router
 from app.api.symbol import router as symbol_router
@@ -26,3 +27,4 @@ api_router.include_router(hook_router)
 api_router.include_router(length_router)
 api_router.include_router(phrase_router)
 api_router.include_router(position_router)
+api_router.include_router(vowel_router)
