@@ -28,6 +28,11 @@ W_ASPECT = 0.10
 _SZ_STRONG_RATIO = 3.0   # path length ≥ 3× chord → likely a closed loop
 _SZ_WEAK_RATIO = 1.8     # path length ≥ 1.8× chord → loose oval
 
+# Open-curve families (curved but not circles): reject strokes that are too
+# circular so that SZ_FAMILY wins on highly circular strokes.
+_OPEN_CURVE_FAMILIES = frozenset({"MW_FAMILY", "NN_FAMILY", "Y_FAMILY"})
+_OPEN_CURVE_MAX_RATIO = 2.5
+
 # Aspect ratio that counts as "tall" or "wide"
 _ASPECT_DOMINANT_RATIO = 1.5
 
@@ -155,12 +160,30 @@ def compute_family_score(features: StrokeFeatures, defn: FamilyDefinition) -> fl
     angle or aspect.  This prevents spurious high-confidence alternatives
     (e.g. THDH scoring 0.70 for a circle stroke because the degenerate chord
     angle happens to be 0°).
+
+    M19 additions:
+    - LR_FAMILY skips the curvature gate: both L (straight) and R (curved)
+      share the same up-right angle; curvature is used only at symbol level.
+    - Open-curve families (MW, NN, Y) apply a curvature cap: strokes with
+      curvature_ratio > 2.5 are scored at 0.05 so SZ_FAMILY wins on circles.
     """
     if defn.name == "SZ_FAMILY":
         circle = score_circle(features)
         aspect = score_aspect(features, defn.aspect_hint)
         # Circle likeness carries most of the weight for S/Z
         return round(0.80 * circle + 0.20 * aspect, 4)
+
+    if defn.name == "LR_FAMILY":
+        # L is straight, R is curved — both go in the same up-right direction.
+        # Skip the curvature gate; symbol_rules.py distinguishes them later.
+        angle = score_angle(features, defn.angle_center, defn.angle_tolerance)
+        aspect = score_aspect(features, defn.aspect_hint)
+        return round((W_ANGLE + W_SHAPE) * angle + W_ASPECT * aspect, 4)
+
+    # For open-curve families: reject strokes that are too circular (→ SZ territory).
+    if defn.name in _OPEN_CURVE_FAMILIES and features.is_curve:
+        if features.curvature_ratio > _OPEN_CURVE_MAX_RATIO:
+            return 0.05
 
     # Hard gate: wrong shape type cannot produce a meaningful match.
     # Scored at 0.05 so wrong-shape strokes are far below CONFIDENCE_THRESHOLD

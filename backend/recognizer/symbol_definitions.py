@@ -60,12 +60,35 @@ SYMBOL_DEFINITIONS: dict[str, SymbolDefinition] = {
     # SHZH_FAMILY
     "SH": SymbolDefinition("SH", "SHZH_FAMILY", False, "/ʃ/",  "Unvoiced palatal fricative (she)"),
     "ZH": SymbolDefinition("ZH", "SHZH_FAMILY", True,  "/ʒ/",  "Voiced palatal fricative (measure)"),
+
+    # ── M19: Nine new consonant symbols ─────────────────────────────────────────
+
+    # MW_FAMILY — M large/long open curve, W small/short open curve
+    "M":  SymbolDefinition("M",  "MW_FAMILY",   False, "/m/",  "Bilabial nasal (man)"),
+    "W":  SymbolDefinition("W",  "MW_FAMILY",   False, "/w/",  "Bilabial approximant (win)"),
+
+    # LR_FAMILY — L straight up-right, R curved up-right; is_voiced used for
+    # the is_voiced field only (R treated as voiced proxy for curvature pairing)
+    "L":  SymbolDefinition("L",  "LR_FAMILY",   False, "/l/",  "Alveolar lateral approximant (leg)"),
+    "R":  SymbolDefinition("R",  "LR_FAMILY",   True,  "/r/",  "Alveolar rhotic approximant (red)"),
+
+    # NN_FAMILY — N short curve (unvoiced proxy), NG long curve, NK with hook
+    "N":  SymbolDefinition("N",  "NN_FAMILY",   False, "/n/",  "Alveolar nasal (net)"),
+    "NG": SymbolDefinition("NG", "NN_FAMILY",   True,  "/ŋ/",  "Velar nasal (ring)"),
+    "NK": SymbolDefinition("NK", "NN_FAMILY",   True,  "/ŋk/", "Velar nasal-stop cluster (think)"),
+
+    # Y_FAMILY — single-member
+    "Y":  SymbolDefinition("Y",  "Y_FAMILY",    False, "/j/",  "Palatal approximant (yes)"),
+
+    # H_FAMILY — single-member
+    "H":  SymbolDefinition("H",  "H_FAMILY",    False, "/h/",  "Glottal fricative (hat)"),
 }
 
-# Ordered (unvoiced, voiced) pair per family.
-# Order matters: index 0 receives the higher prior in most families.
-# THDH is deliberately reversed (DH first) — see reasoning above and in symbol_rules.py.
-FAMILY_SYMBOLS: dict[str, tuple[str, str]] = {
+# Ordered symbol tuple per family.  Variable-length: most families have 2 members;
+# NN_FAMILY has 3; Y_FAMILY and H_FAMILY have 1.
+# Order matters for two-member families: index 0 is the higher-frequency prior.
+# THDH is deliberately reversed (DH first) — /ð/ more frequent than /θ/.
+FAMILY_SYMBOLS: dict[str, tuple[str, ...]] = {
     "PB_FAMILY":   ("P",  "B"),
     "TD_FAMILY":   ("T",  "D"),
     "KG_FAMILY":   ("K",  "G"),
@@ -74,6 +97,12 @@ FAMILY_SYMBOLS: dict[str, tuple[str, str]] = {
     "THDH_FAMILY": ("DH", "TH"),   # DH first — /ð/ more frequent than /θ/
     "SZ_FAMILY":   ("S",  "Z"),
     "SHZH_FAMILY": ("SH", "ZH"),
+    # M19 families
+    "MW_FAMILY":   ("M",  "W"),
+    "LR_FAMILY":   ("L",  "R"),
+    "NN_FAMILY":   ("N",  "NG", "NK"),
+    "Y_FAMILY":    ("Y",),
+    "H_FAMILY":    ("H",),
 }
 
 # Maximum confidence achievable when thickness data is absent.

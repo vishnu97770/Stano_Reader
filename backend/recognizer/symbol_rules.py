@@ -33,7 +33,18 @@ _FREQUENCY_PRIORS: dict[str, dict[str, float]] = {
     "THDH_FAMILY": {"DH": 0.56, "TH": 0.44},
     "SZ_FAMILY":   {"S":  0.62, "Z":  0.38},
     "SHZH_FAMILY": {"SH": 0.54, "ZH": 0.46},
+    # M19 families
+    "MW_FAMILY":   {"M":  0.55, "W":  0.45},
+    "LR_FAMILY":   {"L":  0.55, "R":  0.45},
+    "NN_FAMILY":   {"N":  0.60, "NG": 0.28, "NK": 0.12},
+    "Y_FAMILY":    {"Y":  1.00},
+    "H_FAMILY":    {"H":  1.00},
 }
+
+# Length thresholds (px) for M vs W discrimination within MW_FAMILY.
+# M is a large open curve; W is a small open curve.
+_MW_LONG_THRESHOLD  = 70.0   # strokes longer than this prefer M
+_MW_SHORT_THRESHOLD = 35.0   # strokes shorter than this prefer W
 
 # Maximum confidence achievable via pressure scoring.
 # 0.92 allows for slight hardware noise even at extremes.
@@ -54,16 +65,81 @@ def compute_symbol_scores(
     scores:            symbol → confidence value ∈ [0, 1]
     thickness_missing: True when pressure data was unavailable for this decision
     reason:            human-readable explanation (None when thickness IS available)
+
+    M19 extensions:
+    - Single-member families (H_FAMILY, Y_FAMILY): trivially return the sole symbol.
+    - LR_FAMILY: L vs R discriminated by curvature (is_curve), not pressure.
+    - MW_FAMILY: M vs W discriminated by stroke length, not pressure.
+    - NN_FAMILY: three-member family; _score_from_pressure only handles two-member
+      families, so frequency priors are always used here.
     """
     if family not in FAMILY_SYMBOLS or family not in _FREQUENCY_PRIORS:
         return {}, True, f"No symbol data for family '{family}'"
 
+    symbols = FAMILY_SYMBOLS[family]
+
+    # Single-member families: trivially correct, no pressure needed.
+    if len(symbols) == 1:
+        return {symbols[0]: 1.0}, False, None
+
+    # LR_FAMILY: L (straight) vs R (curved) — purely geometric, no pressure.
+    if family == "LR_FAMILY":
+        return _score_lr(features), False, None
+
+    # MW_FAMILY: M (long) vs W (short) — length-based, no pressure.
+    if family == "MW_FAMILY":
+        return _score_mw(features), False, None
+
+    # NN_FAMILY: three-member family; always use frequency priors.
+    if family == "NN_FAMILY":
+        priors = _FREQUENCY_PRIORS[family]
+        scaled = {sym: min(conf, THICKNESS_MISSING_CONFIDENCE_CAP) for sym, conf in priors.items()}
+        return scaled, True, THICKNESS_MISSING_REASON
+
+    # Standard two-member families: pressure scoring when available, priors otherwise.
     if features.pressure_stats is not None:
         return _score_from_pressure(features, family), False, None
 
     priors = _FREQUENCY_PRIORS[family]
     scores = {sym: min(conf, THICKNESS_MISSING_CONFIDENCE_CAP) for sym, conf in priors.items()}
     return scores, True, THICKNESS_MISSING_REASON
+
+
+# ---------------------------------------------------------------------------
+# M19: Geometry-based scoring for new families
+# ---------------------------------------------------------------------------
+
+def _score_lr(features: StrokeFeatures) -> dict[str, float]:
+    """
+    Distinguish L from R purely by curvature.
+    L is always a straight stroke; R is always a curved stroke.
+    thickness_missing=False because the discriminant is geometric, not pressure.
+    """
+    if features.is_curve:
+        return {
+            "R": min(0.85, THICKNESS_MISSING_CONFIDENCE_CAP),
+            "L": 0.15,
+        }
+    return {
+        "L": min(0.85, THICKNESS_MISSING_CONFIDENCE_CAP),
+        "R": 0.15,
+    }
+
+
+def _score_mw(features: StrokeFeatures) -> dict[str, float]:
+    """
+    Distinguish M from W by stroke length.
+    M is a large open curve (long stroke); W is a small open curve (short stroke).
+    Falls back to frequency prior in the ambiguous middle range.
+    """
+    length = features.length
+    if length >= _MW_LONG_THRESHOLD:
+        return {"M": min(0.72, THICKNESS_MISSING_CONFIDENCE_CAP), "W": 0.28}
+    if length <= _MW_SHORT_THRESHOLD:
+        return {"W": min(0.72, THICKNESS_MISSING_CONFIDENCE_CAP), "M": 0.28}
+    # Ambiguous middle range: use frequency prior
+    priors = _FREQUENCY_PRIORS["MW_FAMILY"]
+    return {sym: min(conf, THICKNESS_MISSING_CONFIDENCE_CAP) for sym, conf in priors.items()}
 
 
 # ---------------------------------------------------------------------------

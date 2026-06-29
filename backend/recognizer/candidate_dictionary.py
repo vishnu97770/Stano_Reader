@@ -2,13 +2,16 @@
 Built-in word list with recognizer-visible consonant skeletons.
 
 Each entry is (word, skeleton) where skeleton contains only the consonant
-phonemes that the current Pitman recognizer can produce:
+phonemes that the current Pitman recognizer can produce.
+
+M1–M18 visible set:
   /p/ /b/ /t/ /d/ /k/ /ɡ/ /tʃ/ /dʒ/ /f/ /v/ /θ/ /ð/ /s/ /z/ /ʃ/ /ʒ/
 
-Consonants outside that set (/l/ /r/ /m/ /n/ /h/ /w/ /j/ /ŋ/) are invisible
-to the current engine and are omitted from the skeleton.  When those families
-are added in a future milestone, the dictionary entries will be extended;
-no engine logic will need to change.
+M19 additions (now fully recognizable):
+  /m/ /w/ /l/ /r/ /n/ /ŋ/ /ŋk/ /j/ /h/
+
+Words added in M19 include the new consonants in their full skeletons.
+Pre-M19 entries are preserved unchanged; the engine logic requires no change.
 
 Vowels are always excluded.
 """
@@ -29,6 +32,16 @@ _S  = "/s/"
 _Z  = "/z/"
 _SH = "/ʃ/"
 _ZH = "/ʒ/"
+# M19 — newly recognizable consonants
+_M  = "/m/"
+_N  = "/n/"
+_L  = "/l/"
+_R  = "/r/"
+_W  = "/w/"
+_H  = "/h/"
+_Y  = "/j/"
+_NG = "/ŋ/"
+_NK = "/ŋk/"
 
 # fmt: off
 DICTIONARY: list[tuple[str, list[str]]] = [
@@ -411,6 +424,222 @@ DICTIONARY: list[tuple[str, list[str]]] = [
     ("pleasure", [_P, _ZH]),
     ("seizure",  [_S, _ZH]),
     ("vision",   [_V, _ZH]),
+
+    # ── M19: /m/ ─────────────────────────────────────────────────────────────
+    ("ma",       [_M]),
+    ("me",       [_M]),
+    ("my",       [_M]),
+    ("mad",      [_M, _D]),
+    ("man",      [_M, _N]),
+    ("map",      [_M, _P]),
+    ("mat",      [_M, _T]),
+    ("may",      [_M]),
+    ("meet",     [_M, _T]),
+    ("mesh",     [_M, _SH]),
+    ("milk",     [_M, _L, _K]),
+    ("mill",     [_M, _L]),
+    ("mind",     [_M, _N, _D]),
+    ("miss",     [_M, _S]),
+    ("mist",     [_M, _S, _T]),
+    ("mix",      [_M, _K, _S]),
+    ("mob",      [_M, _B]),
+    ("mock",     [_M, _K]),
+    ("mood",     [_M, _D]),
+    ("mop",      [_M, _P]),
+    ("more",     [_M, _R]),
+    ("moss",     [_M, _S]),
+    ("moth",     [_M, _TH]),
+    ("move",     [_M, _V]),
+    ("much",     [_M, _CH]),
+    ("mud",      [_M, _D]),
+    ("mug",      [_M, _G]),
+    ("must",     [_M, _S, _T]),
+    ("make",     [_M, _K]),
+    ("made",     [_M, _D]),
+    ("male",     [_M, _L]),
+    ("mend",     [_M, _N, _D]),
+    ("mild",     [_M, _L, _D]),
+    ("most",     [_M, _S, _T]),
+    ("mast",     [_M, _S, _T]),
+    ("mask",     [_M, _S, _K]),
+    ("musk",     [_M, _S, _K]),
+
+    # ── M19: /n/ ─────────────────────────────────────────────────────────────
+    ("nab",      [_N, _B]),
+    ("nag",      [_N, _G]),
+    ("nap",      [_N, _P]),
+    ("neck",     [_N, _K]),
+    ("net",      [_N, _T]),
+    ("nip",      [_N, _P]),
+    ("nit",      [_N, _T]),
+    ("nob",      [_N, _B]),
+    ("nod",      [_N, _D]),
+    ("nor",      [_N, _R]),
+    ("not",      [_N, _T]),
+    ("nub",      [_N, _B]),
+    ("nun",      [_N, _N]),
+    ("nut",      [_N, _T]),
+    ("name",     [_N, _M]),
+    ("nest",     [_N, _S, _T]),
+    ("next",     [_N, _K, _S, _T]),
+    ("night",    [_N, _T]),
+    ("nine",     [_N, _N]),
+    ("note",     [_N, _T]),
+    ("nook",     [_N, _K]),
+    ("nose",     [_N, _Z]),
+    ("knot",     [_N, _T]),
+    ("knob",     [_N, _B]),
+    ("null",     [_N, _L]),
+    ("numb",     [_N, _M]),
+
+    # ── M19: /l/ ─────────────────────────────────────────────────────────────
+    ("lab",      [_L, _B]),
+    ("lag",      [_L, _G]),
+    ("lap",      [_L, _P]),
+    ("lash",     [_L, _SH]),
+    ("last",     [_L, _S, _T]),
+    ("led",      [_L, _D]),
+    ("leg",      [_L, _G]),
+    ("let",      [_L, _T]),
+    ("lid",      [_L, _D]),
+    ("lip",      [_L, _P]),
+    ("lit",      [_L, _T]),
+    ("lock",     [_L, _K]),
+    ("log",      [_L, _G]),
+    ("lot",      [_L, _T]),
+    ("low",      [_L]),
+    ("luck",     [_L, _K]),
+    ("lug",      [_L, _G]),
+    ("lake",     [_L, _K]),
+    ("lame",     [_L, _M]),
+    ("lard",     [_L, _D]),
+    ("laze",     [_L, _Z]),
+    ("leaf",     [_L, _F]),
+    ("left",     [_L, _F, _T]),
+    ("lend",     [_L, _N, _D]),
+    ("live",     [_L, _V]),
+    ("load",     [_L, _D]),
+    ("long",     [_L, _NG]),
+    ("look",     [_L, _K]),
+    ("loss",     [_L, _S]),
+    ("love",     [_L, _V]),
+    ("list",     [_L, _S, _T]),
+    ("less",     [_L, _S]),
+
+    # ── M19: /r/ ─────────────────────────────────────────────────────────────
+    ("rag",      [_R, _G]),
+    ("rap",      [_R, _P]),
+    ("rat",      [_R, _T]),
+    ("red",      [_R, _D]),
+    ("rib",      [_R, _B]),
+    ("rid",      [_R, _D]),
+    ("rip",      [_R, _P]),
+    ("rob",      [_R, _B]),
+    ("rock",     [_R, _K]),
+    ("rot",      [_R, _T]),
+    ("rub",      [_R, _B]),
+    ("rug",      [_R, _G]),
+    ("run",      [_R, _N]),
+    ("rush",     [_R, _SH]),
+    ("rut",      [_R, _T]),
+    ("rack",     [_R, _K]),
+    ("risk",     [_R, _S, _K]),
+    ("road",     [_R, _D]),
+    ("roof",     [_R, _F]),
+    ("root",     [_R, _T]),
+    ("rope",     [_R, _P]),
+    ("rose",     [_R, _Z]),
+    ("rove",     [_R, _V]),
+    ("raze",     [_R, _Z]),
+    ("rest",     [_R, _S, _T]),
+    ("rust",     [_R, _S, _T]),
+
+    # ── M19: /w/ ─────────────────────────────────────────────────────────────
+    ("web",      [_W, _B]),
+    ("wet",      [_W, _T]),
+    ("wig",      [_W, _G]),
+    ("win",      [_W, _N]),
+    ("wit",      [_W, _T]),
+    ("wok",      [_W, _K]),
+    ("wake",     [_W, _K]),
+    ("walk",     [_W, _K]),
+    ("want",     [_W, _N, _T]),
+    ("wave",     [_W, _V]),
+    ("well",     [_W, _L]),
+    ("went",     [_W, _N, _T]),
+    ("will",     [_W, _L]),
+    ("wish",     [_W, _SH]),
+    ("with",     [_W, _TH]),
+    ("woke",     [_W, _K]),
+    ("word",     [_W, _D]),
+    ("work",     [_W, _K]),
+    ("worm",     [_W, _M]),
+
+    # ── M19: /h/ ─────────────────────────────────────────────────────────────
+    ("had",      [_H, _D]),
+    ("hag",      [_H, _G]),
+    ("ham",      [_H, _M]),
+    ("has",      [_H, _S]),
+    ("hat",      [_H, _T]),
+    ("hid",      [_H, _D]),
+    ("him",      [_H, _M]),
+    ("his",      [_H, _S]),
+    ("hit",      [_H, _T]),
+    ("hop",      [_H, _P]),
+    ("hot",      [_H, _T]),
+    ("hub",      [_H, _B]),
+    ("hug",      [_H, _G]),
+    ("hum",      [_H, _M]),
+    ("hut",      [_H, _T]),
+    ("hack",     [_H, _K]),
+    ("haze",     [_H, _Z]),
+    ("have",     [_H, _V]),
+    ("help",     [_H, _L, _P]),
+    ("hemp",     [_H, _M, _P]),
+    ("hint",     [_H, _N, _T]),
+    ("hold",     [_H, _L, _D]),
+    ("home",     [_H, _M]),
+    ("hook",     [_H, _K]),
+    ("hope",     [_H, _P]),
+    ("hung",     [_H, _NG]),
+    ("husk",     [_H, _S, _K]),
+    ("hive",     [_H, _V]),
+    ("heed",     [_H, _D]),
+    ("hest",     [_H, _S, _T]),
+    ("heft",     [_H, _F, _T]),
+
+    # ── M19: /j/ (Y) ─────────────────────────────────────────────────────────
+    ("yak",      [_Y, _K]),
+    ("yap",      [_Y, _P]),
+    ("yell",     [_Y, _L]),
+    ("yes",      [_Y, _S]),
+    ("yet",      [_Y, _T]),
+    ("yob",      [_Y, _B]),
+    ("yoke",     [_Y, _K]),
+    ("yuck",     [_Y, _K]),
+    ("yam",      [_Y, _M]),
+    ("yip",      [_Y, _P]),
+    ("yoga",     [_Y, _G]),
+
+    # ── M19: /ŋ/ and /ŋk/ ────────────────────────────────────────────────────
+    ("ring",     [_R, _NG]),
+    ("king",     [_K, _NG]),
+    ("sing",     [_S, _NG]),
+    ("gang",     [_G, _NG]),
+    ("bang",     [_B, _NG]),
+    ("sang",     [_S, _NG]),
+    ("lung",     [_L, _NG]),
+    ("rung",     [_R, _NG]),
+    ("song",     [_S, _NG]),
+    ("bank",     [_B, _NK]),
+    ("rank",     [_R, _NK]),
+    ("sank",     [_S, _NK]),
+    ("tank",     [_T, _NK]),
+    ("sink",     [_S, _NK]),
+    ("link",     [_L, _NK]),
+    ("pink",     [_P, _NK]),
+    ("rink",     [_R, _NK]),
+    ("wink",     [_W, _NK]),
 
     # ── Multi-family combinations ─────────────────────────────────────────────
     ("spook",    [_S, _P, _K]),

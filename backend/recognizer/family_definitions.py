@@ -118,6 +118,66 @@ FAMILY_DEFINITIONS: dict[str, FamilyDefinition] = {
         aspect_hint="balanced",
         description="Upstroke going upward or up-right (SH light, ZH heavy)",
     ),
+    # ── M19: Nine new consonant families ────────────────────────────────────────
+    #
+    # Angle coverage of the existing 8 families (straight strokes):
+    #   THDH  0° ±18°  = [342°, 18°]
+    #   KG   20° ±22°  = [0°, 42°]
+    #   TD   50° ±22°  = [28°, 72°]
+    #   PB   90° ±22°  = [68°, 112°]
+    #   CHJ 130° ±22°  = [108°, 152°]
+    #   FV  155° ±22°  = [133°, 177°]
+    #   SHZH 290° ±28° = [262°, 318°]
+    #
+    # Free straight-stroke gaps: [177°, 262°] and [318°, 342°].
+    # New curved-stroke families (MW, NN, Y) exploit is_curve=True to avoid
+    # conflicting with straight-stroke families at the same angle.
+    # ────────────────────────────────────────────────────────────────────────────
+    "MW_FAMILY": FamilyDefinition(
+        name="MW_FAMILY",
+        members=("M", "W"),
+        angle_center=0.0,
+        angle_tolerance=35.0,
+        expect_curve=True,    # open rightward arc; THDH/KG are straight at same angle
+        aspect_hint="wide",
+        description="Curved rightward arc (M large/long, W small/short)",
+    ),
+    "LR_FAMILY": FamilyDefinition(
+        name="LR_FAMILY",
+        members=("L", "R"),
+        angle_center=325.0,   # up-right; gap between SHZH (max 318°) and THDH (min 342°)
+        angle_tolerance=20.0,
+        expect_curve=False,   # L is straight; R is curved — handled via special case in rules
+        aspect_hint="balanced",
+        description="Up-right upstroke (L straight, R curved — same direction, scored by angle)",
+    ),
+    "NN_FAMILY": FamilyDefinition(
+        name="NN_FAMILY",
+        members=("N", "NG", "NK"),
+        angle_center=90.0,    # downward; PB is straight at same angle — curvature separates them
+        angle_tolerance=25.0,
+        expect_curve=True,    # open downward arc; PB at 90° is always straight
+        aspect_hint="tall",
+        description="Curved downward stroke (N short, NG long, NK with hook)",
+    ),
+    "Y_FAMILY": FamilyDefinition(
+        name="Y_FAMILY",
+        members=("Y",),
+        angle_center=200.0,   # down-left; free gap beyond FV (max 177°)
+        angle_tolerance=30.0,
+        expect_curve=True,    # small curved hook
+        aspect_hint="balanced",
+        description="Small curved down-left hook stroke (Y = /j/)",
+    ),
+    "H_FAMILY": FamilyDefinition(
+        name="H_FAMILY",
+        members=("H",),
+        angle_center=250.0,   # up-left; gap between FV (max 177°) and SHZH (min 262°)
+        angle_tolerance=20.0,
+        expect_curve=False,   # short straight flick
+        aspect_hint="balanced",
+        description="Short straight up-left flick (H = /h/)",
+    ),
 }
 
 # Ordered list for deterministic iteration (dict is insertion-ordered in 3.7+)
